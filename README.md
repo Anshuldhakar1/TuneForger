@@ -1,6 +1,6 @@
 # Spotify Playlist Generator App
   
-This is a project built with [Chef](https://chef.convex.dev) using [Convex](https://convex.dev) as its backend.
+This is a project built using [Convex](https://convex.dev) as its backend.
   
 This project is connected to the Convex deployment named [`benevolent-turtle-774`](https://dashboard.convex.dev/d/benevolent-turtle-774).
   
