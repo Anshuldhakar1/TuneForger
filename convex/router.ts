@@ -58,7 +58,7 @@ http.route({
           </style>
         </head>
         <body>
-          <h1 class="success">✅ Spotify Connected!</h1>
+          <h1 class="success">Spotify Connected!</h1>
           <p>Redirecting back to the app...</p>
           <script>
             console.log('Sending success message to parent');

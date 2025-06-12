@@ -24,8 +24,6 @@ export function SpotifyConnection() {
   
       // Listen for popup messages
       const handleMessage = async (event: MessageEvent) => {
-        // console.log('Received message:', event.data);
-        
         if (event.data?.type === "spotify-code") {
           try {
             await exchangeSpotifyCode({ 
@@ -39,6 +37,7 @@ export function SpotifyConnection() {
           }
           popup?.close();
           setIsConnecting(false);
+          // eslint-disable-next-line @typescript-eslint/no-misused-promises
           window.removeEventListener("message", handleMessage); 
         }
         
@@ -47,10 +46,12 @@ export function SpotifyConnection() {
           toast.error("Spotify connection failed");
           popup?.close();
           setIsConnecting(false);
+          // eslint-disable-next-line @typescript-eslint/no-misused-promises
           window.removeEventListener("message", handleMessage); // Fixed!
         }
       };
-  
+
+      // eslint-disable-next-line @typescript-eslint/no-misused-promises
       window.addEventListener("message", handleMessage); // Fixed!
   
       // Check if popup was closed manually
@@ -58,6 +59,7 @@ export function SpotifyConnection() {
         if (popup?.closed && isConnecting) {
           clearInterval(checkClosed);
           setIsConnecting(false);
+          // eslint-disable-next-line @typescript-eslint/no-misused-promises
           window.removeEventListener("message", handleMessage); // Fixed!
           console.log('Popup was closed manually');
         }
@@ -80,8 +82,6 @@ export function SpotifyConnection() {
       toast.error("Failed to disconnect Spotify");
     }
   };
-
-  // console.log("spotifyTokens:", spotifyTokens); // Add this line
 
   if (spotifyTokens === undefined) {
     return (
@@ -113,7 +113,6 @@ export function SpotifyConnection() {
         {spotifyTokens ? (
           <button
             onClick={() => { 
-              // console.log("Disconnect button clicked!"); // Add this
               void handleDisconnect(); 
             }}
             className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
