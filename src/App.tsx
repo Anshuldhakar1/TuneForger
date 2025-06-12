@@ -45,13 +45,13 @@ function Content() {
       </Unauthenticated>
 
       <Authenticated>
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-primary mb-2">Welcome back, {loggedInUser?.email?.split('@')[0]}!</h1>
+        {/* <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-primary mb-2">Welcome back, {loggedInUser?.email?.split('@')[0]}!</h1> 
           <p className="text-lg text-secondary">Generate amazing playlists with AI</p>
-        </div>
+        </div> */}
 
         <div className="flex justify-center mb-8">
-          <div className="bg-white rounded-lg p-1 shadow-sm border">
+          <div className="bg-white rounded-lg p-2 shadow-sm border">
             <button
               onClick={() => setCurrentView("generator")}
               className={`px-6 py-2 rounded-md font-medium transition-colors ${

@@ -44,6 +44,7 @@ export function SpotifyConnection() {
         if (event.data?.type === "spotify-error") {
           console.error('Spotify error:', event.data.error);
           toast.error("Spotify connection failed");
+          setTimeout(() => { }, 2000);
           popup?.close();
           setIsConnecting(false);
           // eslint-disable-next-line @typescript-eslint/no-misused-promises
