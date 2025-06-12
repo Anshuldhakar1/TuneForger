@@ -32,6 +32,22 @@ const applicationTables = {
     spotifyUserId: v.string(),
     spotifyDisplayName: v.optional(v.string()),
   }).index("by_user", ["userId"]),
+
+  // users: defineTable({
+  //   userId: v.id("users"),
+  //   displayName: v.optional(v.string()),
+  //   email: v.string(),
+  //   imageUrl: v.optional(v.string()),
+  //   createdAt: v.number(),
+  //   spotifyUserId: v.optional(v.string()),
+  //   spotifyDisplayName: v.optional(v.string()),
+  //   spotifyAccessToken: v.optional(v.string()),
+  //   spotifyRefreshToken: v.optional(v.string()),
+  //   spotifyExpiresAt: v.optional(v.number()),
+  //   spotifyScopes: v.optional(v.array(v.string())),
+  //   spotifyCountry: v.optional(v.string()),
+  //   spotifyEmail: v.optional(v.string()),
+  // }).index("by_user", ["userId"]),
 };
 
 export default defineSchema({
