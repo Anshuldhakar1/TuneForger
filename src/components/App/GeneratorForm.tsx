@@ -14,8 +14,13 @@ interface GeneratorFormProps {
     playlistName: string;
     setPrompt: (value: string) => void;
     setPlaylistName: (value: string) => void;
-    onSubmit: () => void;
 }
+
+const onSubmit = () => {
+    
+
+    
+};
 
 export default function GeneratorForm({
     isDarkMode,
@@ -24,7 +29,6 @@ export default function GeneratorForm({
     playlistName,
     setPrompt,
     setPlaylistName,
-    onSubmit,
 }: GeneratorFormProps) {
     return (
         <Card
@@ -39,7 +43,7 @@ export default function GeneratorForm({
                     <div>
                         <label
                             htmlFor="prompt"
-                            className={`block text-base font-bold mb-4 flex items-center space-x-3 ${isDarkMode ? "text-white" : "text-gray-900"
+                            className={`flex text-base font-bold mb-4 items-center space-x-3 ${isDarkMode ? "text-white" : "text-gray-900"
                                 }`}
                         >
                             <div className="p-2 bg-[#28a745] rounded-lg">
@@ -62,7 +66,7 @@ export default function GeneratorForm({
                     <div>
                         <label
                             htmlFor="playlistName"
-                            className={`block text-base font-bold mb-4 flex items-center space-x-3 ${isDarkMode ? "text-white" : "text-gray-900"
+                            className={`flex text-base font-bold mb-4 items-center space-x-3 ${isDarkMode ? "text-white" : "text-gray-900"
                                 }`}
                         >
                             <div className="p-2 bg-[#28a745] rounded-lg">
