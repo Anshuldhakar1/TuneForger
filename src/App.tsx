@@ -1,86 +1,134 @@
-import { Authenticated, Unauthenticated, useQuery } from "convex/react";
-import { api } from "../convex/_generated/api";
-import { SignInForm } from "./SignInForm";
-import { SignOutButton } from "./SignOutButton";
-import { Toaster } from "sonner";
-import { PlaylistGenerator } from "./PlaylistGenerator";
-import { PlaylistList } from "./PlaylistList";
+// src/app/page.tsx
+"use client";
+
 import { useState } from "react";
+import Header from "@/components/App/Header";
+import Background from "@/components/App/Background";
+import Hero from "@/components/App/Hero";
+import GeneratorForm from "@/components/App/GeneratorForm";
+import Presets from "@/components/App/Presets";
+import SocialBtn from "@/components/App/SocialBtn";
+import DisconnectModal from "@/components/App/DisconnectModal";
+import LoadingOverlay from "@/components/App/LoadingOverlay";
 
-export default function App() {
+export default function HomePage() {
+  // State for UI modes and connectivity
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isSpotifyConnected, setIsSpotifyConnected] = useState(true);
+  const [showDisconnectConfirm, setShowDisconnectConfirm] = useState(false);
+
+  // State for child component interactions
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isSpotifyHovered, setIsSpotifyHovered] = useState(false);
+  const [isSocialButtonHovered, setIsSocialButtonHovered] = useState(false);
+
+  // State for the generation process (lifted state)
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [prompt, setPrompt] = useState("");
+  const [playlistName, setPlaylistName] = useState("");
+
+  // --- Handlers ---
+
+  const handleGeneratePlaylist = () => {
+    if (!prompt.trim()) return;
+    console.log("Generating playlist with:", { prompt, playlistName });
+    setIsGenerating(true);
+    // Use void to explicitly ignore the Promise
+    void (async () => {
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+      setIsGenerating(false);
+    })();
+  };
+
+  const confirmDisconnect = () => {
+    setIsSpotifyConnected(false);
+    setShowDisconnectConfirm(false);
+  };
+
+  const toggleDarkMode = () => {
+    setIsDarkMode(!isDarkMode);
+  };
+
+  const handleShare = () => {
+    if (navigator.share) {
+      navigator
+        .share({
+          title: "TuneForge",
+          text: "Create amazing AI-powered playlists!",
+          url: window.location.href,
+        })
+        .catch(() => {
+          navigator.clipboard.writeText(window.location.href).catch(() => { });
+        });
+    } else {
+      navigator.clipboard.writeText(window.location.href).catch(() => { });
+    }
+  };
+
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
-      <header className="sticky top-0 z-10 bg-white/80 backdrop-blur-sm h-16 flex justify-between items-center border-b shadow-sm px-4">
-        <h2 className="text-xl font-semibold text-primary">🎵 AI Playlist Generator</h2>
-        <SignOutButton />
-      </header>
-      <main className="flex-1 p-8">
-        <Content />
+    <div
+      className={`min-h-screen transition-all duration-500 ${isDarkMode ? "bg-gray-900 text-white" : "bg-white text-gray-900"
+        }`}
+    >
+      <Background isDarkMode={isDarkMode} />
+
+      <Header
+        isDarkMode={isDarkMode}
+        toggleDarkMode={toggleDarkMode}
+        isSpotifyConnected={isSpotifyConnected}
+        setIsSpotifyConnected={setIsSpotifyConnected}
+        isSpotifyHovered={isSpotifyHovered}
+        setIsSpotifyHovered={setIsSpotifyHovered}
+        handleDisconnectSpotify={() => setShowDisconnectConfirm(true)}
+        isDropdownOpen={isDropdownOpen}
+        setIsDropdownOpen={setIsDropdownOpen}
+      />
+
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
+        <Hero isDarkMode={isDarkMode} />
+
+        <GeneratorForm
+          isDarkMode={isDarkMode}
+          isGenerating={isGenerating}
+          prompt={prompt}
+          setPrompt={setPrompt}
+          playlistName={playlistName}
+          setPlaylistName={setPlaylistName}
+          onSubmit={handleGeneratePlaylist}
+        />
+
+        <Presets
+          isDarkMode={isDarkMode}
+          isGenerating={isGenerating}
+          setPrompt={setPrompt}
+        />
       </main>
-      <Toaster />
-    </div>
-  );
-}
 
-function Content() {
-  const loggedInUser = useQuery(api.auth.loggedInUser);
-  const [currentView, setCurrentView] = useState<"generator" | "playlists">("generator");
+      <SocialBtn
+        isDarkMode={isDarkMode}
+        isSocialButtonHovered={isSocialButtonHovered}
+        setIsSocialButtonHovered={setIsSocialButtonHovered}
+        handleShare={handleShare}
+      />
 
-  if (loggedInUser === undefined) {
-    return (
-      <div className="flex justify-center items-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
+      <DisconnectModal
+        show={showDisconnectConfirm}
+        isDarkMode={isDarkMode}
+        onClose={() => setShowDisconnectConfirm(false)}
+        onConfirm={confirmDisconnect}
+      />
 
-  return (
-    <div className="max-w-4xl mx-auto">
-      <Unauthenticated>
-        <div className="text-center mb-8">
-          <h1 className="text-5xl font-bold text-primary mb-4">🎵 AI Playlist Generator</h1>
-          <p className="text-xl text-secondary mb-8">Create personalized Spotify playlists with AI</p>
-          <SignInForm />
-        </div>
-      </Unauthenticated>
+      <LoadingOverlay isGenerating={isGenerating} isDarkMode={isDarkMode} />
 
-      <Authenticated>
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-primary mb-2">Welcome back, {loggedInUser?.email?.split('@')[0]}!</h1>
-          <p className="text-lg text-secondary">Generate amazing playlists with AI</p>
-        </div>
-
-        <div className="flex justify-center mb-8">
-          <div className="bg-white rounded-lg p-1 shadow-sm border">
-            <button
-              onClick={() => setCurrentView("generator")}
-              className={`px-6 py-2 rounded-md font-medium transition-colors ${
-                currentView === "generator"
-                  ? "bg-primary text-white"
-                  : "text-gray-600 hover:text-gray-900"
-              }`}
-            >
-              Generate Playlist
-            </button>
-            <button
-              onClick={() => setCurrentView("playlists")}
-              className={`px-6 py-2 rounded-md font-medium transition-colors ${
-                currentView === "playlists"
-                  ? "bg-primary text-white"
-                  : "text-gray-600 hover:text-gray-900"
-              }`}
-            >
-              My Playlists
-            </button>
-          </div>
-        </div>
-
-        {currentView === "generator" ? (
-          <PlaylistGenerator onPlaylistCreated={() => setCurrentView("playlists")} />
-        ) : (
-          <PlaylistList />
-        )}
-      </Authenticated>
+      {/* Custom CSS for animations can remain here or be moved to a global CSS file */}
+      <style>{`
+        @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slide-up { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes dark-grid { 0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.02; } 50% { transform: scale(1.05) rotate(2deg); opacity: 0.03; } }
+        @keyframes light-grid { 0%, 100% { transform: translateX(0px) translateY(0px); opacity: 0.02; } 25% { transform: translateX(5px) translateY(-2px); opacity: 0.025; } 50% { transform: translateX(0px) translateY(-4px); opacity: 0.03; } 75% { transform: translateX(-5px) translateY(-2px); opacity: 0.025; } }
+        .animate-fade-in { animation: fade-in 0.6s ease-out forwards; opacity: 0; }
+        .animate-slide-up { animation: slide-up 0.8s ease-out forwards; opacity: 0; }
+      `}</style>
     </div>
   );
 }
