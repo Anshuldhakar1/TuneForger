@@ -11,7 +11,7 @@ import { useState } from "react";
 interface HomePageProps {
     isDarkMode: boolean;
     setShowDisconnectConfirm: (value: boolean) => void;
-    setCurrentPage: (page: "home" | "playlists") => void;   
+    setCurrentPage: (page: "home" | "playlists" | "gen_playlist") => void;   
     isSocialButtonHovered: boolean;
     setIsSocialButtonHovered: (value: boolean) => void;
     handleShare: () => void;                                                        

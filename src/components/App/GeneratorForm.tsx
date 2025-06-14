@@ -17,7 +17,7 @@ interface GeneratorFormProps {
     setPrompt: (value: string) => void;
     setIsGenerating: (value: boolean) => void;
     setPlaylistName: (value: string) => void;
-    setCurrentPage: (page: "home" | "playlists") => void;
+    setCurrentPage: (page: "home" | "playlists" | "gen_playlist") => void;
 }
 
 export default function GeneratorForm({

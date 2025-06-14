@@ -28,12 +28,14 @@ const SpotifySyncIcon = ({ className }: { className?: string }) => (
 
 interface PlaylistsProps {
     isDarkMode: boolean;
-    setCurrentPage: (page: "home" | "playlists") => void;
+    setCurrentPage: (page: "home" | "playlists" | "gen_playlist") => void;
+    setCurrentViewPlaylistId: (id: string) => void;
 }
 
 export default function Playlists({
     isDarkMode,
     setCurrentPage,
+    setCurrentViewPlaylistId,
 }: PlaylistsProps) {
     // Fetch playlists from backend
     const playlists = useQuery(api.playlists.getUserPlaylists) || [];
@@ -136,8 +138,8 @@ export default function Playlists({
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className={`pl-10 transition-all duration-300 ease-out ${isDarkMode
-                                    ? "bg-gray-800 border-gray-600 text-white focus:border-[#31c266] focus:ring-[#31c266]"
-                                    : "bg-white border-gray-200 focus:border-[#31c266] focus:ring-[#31c266]"
+                                ? "bg-gray-800 border-gray-600 text-white focus:border-[#31c266] focus:ring-[#31c266]"
+                                : "bg-white border-gray-200 focus:border-[#31c266] focus:ring-[#31c266]"
                                 }`}
                         />
                     </div>
@@ -148,10 +150,10 @@ export default function Playlists({
                         size="sm"
                         onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
                         className={`transition-all duration-300 ease-out hover:scale-105 ${showFavoritesOnly
-                                ? "bg-[#31c266]/10 text-[#31c266] border-[#31c266]/30 hover:bg-[#31c266]/20"
-                                : isDarkMode
-                                    ? "bg-gray-800 border-gray-600 text-gray-200 hover:bg-gray-700"
-                                    : "bg-white border-gray-200 hover:bg-gray-50"
+                            ? "bg-[#31c266]/10 text-[#31c266] border-[#31c266]/30 hover:bg-[#31c266]/20"
+                            : isDarkMode
+                                ? "bg-gray-800 border-gray-600 text-gray-200 hover:bg-gray-700"
+                                : "bg-white border-gray-200 hover:bg-gray-50"
                             }`}
                     >
                         <Heart className="w-4 h-4" />
@@ -161,8 +163,8 @@ export default function Playlists({
                 <div className="flex items-center gap-2">
                     <div
                         className={`flex border rounded-lg overflow-hidden ${isDarkMode
-                                ? "border-gray-600 bg-gray-800"
-                                : "border-gray-200 bg-white"
+                            ? "border-gray-600 bg-gray-800"
+                            : "border-gray-200 bg-white"
                             }`}
                     >
                         <Button
@@ -170,10 +172,10 @@ export default function Playlists({
                             size="sm"
                             onClick={() => setViewMode("grid")}
                             className={`rounded-none transition-all duration-300 ease-out ${viewMode === "grid"
-                                    ? "bg-[#31c266] hover:bg-[#31c266]/90 text-white"
-                                    : isDarkMode
-                                        ? "hover:bg-gray-700 text-gray-200"
-                                        : "hover:bg-gray-50"
+                                ? "bg-[#31c266] hover:bg-[#31c266]/90 text-white"
+                                : isDarkMode
+                                    ? "hover:bg-gray-700 text-gray-200"
+                                    : "hover:bg-gray-50"
                                 }`}
                         >
                             <Grid className="w-4 h-4" />
@@ -183,10 +185,10 @@ export default function Playlists({
                             size="sm"
                             onClick={() => setViewMode("list")}
                             className={`rounded-none transition-all duration-300 ease-out ${viewMode === "list"
-                                    ? "bg-[#31c266] hover:bg-[#31c266]/90 text-white"
-                                    : isDarkMode
-                                        ? "hover:bg-gray-700 text-gray-200"
-                                        : "hover:bg-gray-50"
+                                ? "bg-[#31c266] hover:bg-[#31c266]/90 text-white"
+                                : isDarkMode
+                                    ? "hover:bg-gray-700 text-gray-200"
+                                    : "hover:bg-gray-50"
                                 }`}
                         >
                             <List className="w-4 h-4" />
@@ -211,6 +213,10 @@ export default function Playlists({
                     return (
                         <Card
                             key={playlist._id}
+                            onClick={() => {
+                                setCurrentViewPlaylistId(playlist._id);
+                                setCurrentPage("gen_playlist");
+                            }}
                             className={`
                 group cursor-pointer transition-all duration-500 ease-out hover:scale-105
                 animate-in slide-in-from-bottom
@@ -242,9 +248,10 @@ export default function Playlists({
                                                                 size="sm"
                                                                 variant="secondary"
                                                                 className="bg-white/90 hover:bg-white text-[#31c266] shadow-lg hover:shadow-xl transition-all duration-300 ease-out hover:scale-110"
-                                                                onClick={() =>
-                                                                    window.open(playlist.spotifyUrl, "_blank")
-                                                                }
+                                                                onClick={e => {
+                                                                    e.stopPropagation();
+                                                                    window.open(playlist.spotifyUrl, "_blank");
+                                                                }}
                                                                 title="Open in Spotify"
                                                             >
                                                                 <SpotifySyncIcon className="w-4 h-4" />
@@ -256,7 +263,7 @@ export default function Playlists({
                                                     <Button
                                                         variant="ghost"
                                                         size="sm"
-                                                        onClick={(e) => {
+                                                        onClick={e => {
                                                             e.stopPropagation();
                                                             toggleLike(playlist._id);
                                                         }}
@@ -264,8 +271,8 @@ export default function Playlists({
                                                     >
                                                         <Heart
                                                             className={`w-4 h-4 transition-all duration-300 ease-out ${likedPlaylists.includes(playlist._id)
-                                                                    ? "fill-red-500 text-red-500"
-                                                                    : "text-white"
+                                                                ? "fill-red-500 text-red-500"
+                                                                : "text-white"
                                                                 }`}
                                                         />
                                                     </Button>
@@ -287,9 +294,10 @@ export default function Playlists({
                                                         variant="ghost"
                                                         size="sm"
                                                         className={`opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out ${isDarkMode
-                                                                ? "hover:bg-gray-700"
-                                                                : "hover:bg-gray-100"
+                                                            ? "hover:bg-gray-700"
+                                                            : "hover:bg-gray-100"
                                                             }`}
+                                                        onClick={e => e.stopPropagation()}
                                                     >
                                                         <MoreHorizontal className="w-4 h-4" />
                                                     </Button>
@@ -306,7 +314,10 @@ export default function Playlists({
                                                                 ? "text-gray-200 hover:bg-gray-700"
                                                                 : ""
                                                         }
-                                                        onClick={() => copyPlaylistLink(playlist._id)}
+                                                        onClick={e => {
+                                                            e.stopPropagation();
+                                                            copyPlaylistLink(playlist._id);
+                                                        }}
                                                     >
                                                         Copy Link
                                                     </DropdownMenuItem>
@@ -317,9 +328,10 @@ export default function Playlists({
                                                                     ? "text-gray-200 hover:bg-gray-700"
                                                                     : ""
                                                             }
-                                                            onClick={() =>
-                                                                window.open(playlist.spotifyUrl, "_blank")
-                                                            }
+                                                            onClick={e => {
+                                                                e.stopPropagation();
+                                                                window.open(playlist.spotifyUrl, "_blank");
+                                                            }}
                                                         >
                                                             Open in Spotify
                                                         </DropdownMenuItem>
@@ -329,7 +341,8 @@ export default function Playlists({
                                                     />
                                                     <DropdownMenuItem
                                                         className="text-red-600"
-                                                        onClick={() => {
+                                                        onClick={e => {
+                                                            e.stopPropagation();
                                                             void handleDelete(playlist._id, playlist.name);
                                                         }}
                                                     >
@@ -380,7 +393,7 @@ export default function Playlists({
                                             >
                                                 {playlist.description}
                                             </p>
-                                            
+
                                             <div
                                                 className={`flex items-center space-x-4 text-xs mt-1 ${isDarkMode ? "text-gray-400" : "text-gray-500"
                                                     }`}
@@ -399,9 +412,10 @@ export default function Playlists({
                                                     variant="ghost"
                                                     size="sm"
                                                     className="transition-all duration-300 ease-out hover:scale-110"
-                                                    onClick={() =>
-                                                        window.open(playlist.spotifyUrl, "_blank")
-                                                    }
+                                                    onClick={e => {
+                                                        e.stopPropagation();
+                                                        window.open(playlist.spotifyUrl, "_blank");
+                                                    }}
                                                     title="Open in Spotify"
                                                 >
                                                     <SpotifySyncIcon className="w-4 h-4 text-[#31c266]" />
@@ -410,7 +424,7 @@ export default function Playlists({
                                             <Button
                                                 variant="ghost"
                                                 size="sm"
-                                                onClick={(e) => {
+                                                onClick={e => {
                                                     e.stopPropagation();
                                                     toggleLike(playlist._id);
                                                 }}
@@ -418,8 +432,8 @@ export default function Playlists({
                                             >
                                                 <Heart
                                                     className={`w-4 h-4 transition-all duration-300 ease-out ${likedPlaylists.includes(playlist._id)
-                                                            ? "fill-red-500 text-red-500"
-                                                            : "text-gray-400"
+                                                        ? "fill-red-500 text-red-500"
+                                                        : "text-gray-400"
                                                         }`}
                                                 />
                                             </Button>
@@ -429,6 +443,7 @@ export default function Playlists({
                                                         variant="ghost"
                                                         size="sm"
                                                         className="opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out"
+                                                        onClick={e => e.stopPropagation()}
                                                     >
                                                         <MoreHorizontal className="w-4 h-4" />
                                                     </Button>
@@ -445,7 +460,10 @@ export default function Playlists({
                                                                 ? "text-gray-200 hover:bg-gray-700"
                                                                 : ""
                                                         }
-                                                        onClick={() => copyPlaylistLink(playlist._id)}
+                                                        onClick={e => {
+                                                            e.stopPropagation();
+                                                            copyPlaylistLink(playlist._id);
+                                                        }}
                                                     >
                                                         Copy Link
                                                     </DropdownMenuItem>
@@ -456,9 +474,10 @@ export default function Playlists({
                                                                     ? "text-gray-200 hover:bg-gray-700"
                                                                     : ""
                                                             }
-                                                            onClick={() =>
-                                                                window.open(playlist.spotifyUrl, "_blank")
-                                                            }
+                                                            onClick={e => {
+                                                                e.stopPropagation();
+                                                                window.open(playlist.spotifyUrl, "_blank");
+                                                            }}
                                                         >
                                                             Open in Spotify
                                                         </DropdownMenuItem>
@@ -468,7 +487,8 @@ export default function Playlists({
                                                     />
                                                     <DropdownMenuItem
                                                         className="text-red-600"
-                                                        onClick={() => {
+                                                        onClick={e => {
+                                                            e.stopPropagation();
                                                             void handleDelete(playlist._id, playlist.name);
                                                         }}
                                                     >

@@ -7,10 +7,12 @@ import HomePage from "./HomePage";
 import Header from "@/components/App/Header";
 import Playlists from "./Playlists";
 import DisconnectModal from "@/components/App/DisconnectModal";
+import Playlist from "./Playlist";
 
 export default function App() {
 
-  const [currentPage, setCurrentPage] = useState<"home"|"playlists">("home");
+  const [currentPage, setCurrentPage] = useState<"home" | "playlists" | "gen_playlist">("home");
+  const [currentViewPlaylistId, setCurrentViewPlaylistId] = useState<string>("");
 
   // State for UI modes and connectivity
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -86,7 +88,18 @@ export default function App() {
         <Playlists
           isDarkMode={isDarkMode}
           setCurrentPage={setCurrentPage}
+          setCurrentViewPlaylistId={setCurrentViewPlaylistId}
         />
+      }
+
+      { 
+        currentPage === "gen_playlist" && currentViewPlaylistId !== "" &&
+        <Playlist 
+          isDarkMode={isDarkMode}
+          setCurrentPage={setCurrentPage}
+          currentViewPlaylistId={currentViewPlaylistId}
+        />
+
       }
       
       {/* Add any additional components or modals here */}

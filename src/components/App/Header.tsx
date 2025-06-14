@@ -19,7 +19,7 @@ interface HeaderProps {
     handleDisconnectSpotify: () => void;
     toggleDarkMode: () => void;
     setIsDropdownOpen: (dropdownState: boolean) => void;
-    setCurrentPage: (page: "home" | "playlists") => void;
+    setCurrentPage: (page: "home" | "playlists" | "gen_playlist") => void;
 };
 
 export default function Header(
