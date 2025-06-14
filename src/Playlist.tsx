@@ -128,31 +128,34 @@ export default function Playlist({
                         <HeadphonesIcon className="w-20 h-20 text-white/80" />
                     </div>
                     <div className="flex-1 flex flex-col justify-end">
-                        <h1 className="text-4xl font-bold mb-2 text-gray-900 dark:text-white">
+                        <h1 className={`text-4xl font-bold mb-2 ${isDarkMode ? "text-white" : "text-gray-900"}`}>
                             {playlist.name}
                         </h1>
                         <div className="mb-2">
-                            <span className="text-base font-semibold text-gray-700 dark:text-gray-300">
+                            <span className={`text-base font-semibold ${isDarkMode ? "text-gray-100" : "text-gray-700"}`}>
                                 Generated from:
                             </span>
-                            <p className="italic text-base text-gray-600 dark:text-gray-400 mt-1">
+                            <p className={`italic text-base mt-1 ${isDarkMode ? "text-gray-100" : "text-gray-600"}`}>
                                 "{playlist.query || ""}"
                             </p>
                         </div>
                         <div className="mb-3">
-                            <div className="text-base font-medium text-gray-700 dark:text-gray-300">
-                                <span className="relative top-[-3px] font-semibold">Description:</span>
+                            <div className="text-base font-medium text-gray-700 ">
+                                <span className={`relative top-[-3px] font-semibold ${isDarkMode ? "text-gray-100" : ""}`}>Description:</span>
 
+                                {/* className={`ml-2 p-1 border-2 text-purple-200 border-purple-300 rounded-lg hover:bg-purple-600 hover:text-white `}
+                                     */}
                                 <button
                                     type="button"
-                                    className="ml-2 p-1 border-2 border-purple-300 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/30"
+                                    className={`ml-2 p-1 border-2 text-purple-600 border-purple-300 rounded-lg hover:bg-purple-300 hover:border-purple-500 hover:text-purple-800 
+                                        ${isDarkMode ? "text-white hover:bg-purple-600 hover:text-white" : ""}`}
                                     onClick={() => {
                                         setIsEditingDescription(true);
                                         setTimeout(() => textareaRef.current?.focus(), 0);
                                     }}
                                     aria-label="Edit description"
                                 >
-                                    <svg className="w-4 h-4 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg className="w-4 h-4 " fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path d="M12 20h9" />
                                         <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
                                     </svg>
@@ -160,7 +163,7 @@ export default function Playlist({
                             </div>
                             {!isEditingDescription ? (
                                 <div className="flex items-center gap-2 mt-1">
-                                    <p className="text-base text-gray-700 dark:text-gray-300">
+                                    <p className={`text-base text-gray-700 ${isDarkMode ? "text-gray-100" : ""}`}>
                                         {description}
                                     </p>
                                 </div>
@@ -191,7 +194,10 @@ export default function Playlist({
                                         </button>
                                         <button
                                             type="button"
-                                            className="px-4 py-1.5 rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 text-sm font-medium"
+                                            className={`px-4 py-1.5 rounded border text-sm font-medium ${isDarkMode 
+                                                ? "border-gray-600 bg-gray-700 text-gray-200 hover:bg-gray-600" 
+                                                : "border-gray-300 bg-white text-gray-700 hover:bg-gray-100"
+                                            }`}
                                             onClick={() => {
                                                 setDescription(originalDescription);
                                                 setIsEditingDescription(false);
@@ -203,7 +209,11 @@ export default function Playlist({
                                 </div>
                             )}
                         </div>
-                        <div className="flex max-w-fit border-2 p-1 pl-2 pr-2 rounded-md border-green-200 relative z-60 bg-white items-center gap-4 text-sm text-gray-500 dark:text-gray-400 mb-4">
+                        <div className={`flex max-w-fit border-2 p-1 pl-2 pr-2 rounded-md relative z-60 items-center gap-4 text-sm mb-4 ${
+                            isDarkMode 
+                                ? "text-gray-100 bg-gray-800 border-green-500" 
+                                : "text-gray-500 bg-white border-green-200"
+                        }`}>
                             <CalendarIcon className="w-4 h-4" />
                             <span>
                                 Created {new Date(playlist.createdAt).toLocaleDateString()}
@@ -231,36 +241,36 @@ export default function Playlist({
                         >
                             <div className="grid grid-cols-12 gap-4 text-base font-semibold text-green-600">
                                 <div className="col-span-1">#</div>
-                                <div className="col-span-5">Track Details</div>
-                                <div className="col-span-2">Artist</div>
+                                <div className="col-span-3">Track Details</div>
+                                <div className="col-span-3">Artist</div>
                                 <div className="col-span-2">Genre</div>
                                 <div className="col-span-1 flex items-center gap-1">
                                     <ClockIcon className="w-4 h-4" />
                                     Duration
                                 </div>
-                                <div className="col-span-1">Actions</div>
+                                <div className="col-span-2">Actions</div>
                             </div>
                         </div>
                         {/* Track Rows */}
-                        <div className="divide-y divide-gray-100 dark:divide-gray-700">
+                        <div className={`divide-y ${isDarkMode ? "divide-gray-700" : "divide-gray-100"}`}>
                             {tracks.map((track, idx) => (
                                 <div
                                     key={track._id}
-                                    className="grid grid-cols-12 gap-4 items-center px-6 py-4 text-base bg-white dark:bg-gray-800"
+                                    className={`grid grid-cols-12 gap-4 items-center px-6 py-4 text-base ${isDarkMode ? "bg-gray-800" : "bg-white"}`}
                                 >
                                     <div className="col-span-1 text-green-500 font-semibold">{idx + 1}</div>
-                                    <div className="col-span-5 flex items-center gap-3">
+                                    <div className="col-span-3 flex items-center gap-3">
                                         <div className="w-10 h-10 bg-gradient-to-br from-green-100 to-green-200 rounded-lg flex items-center justify-center">
                                             <HeadphonesIcon className="w-5 h-5 text-green-600" />
                                         </div>
                                         <div>
-                                            <div className="font-semibold text-gray-900 dark:text-white">
+                                            <div className={`font-semibold ${isDarkMode ? "text-white" : "text-gray-900"}`}>
                                                 {track.name}
                                             </div>
                                             {/* Optionally show album or other info here */}
                                         </div>
                                     </div>
-                                    <div className="col-span-2 text-gray-700 dark:text-gray-300">
+                                    <div className={`col-span-3 ${isDarkMode ? "text-gray-300" : "text-gray-700"}`}>
                                         {track.artist || <span className="text-gray-400">N/A</span>}
                                     </div>
                                     <div className="col-span-2">
@@ -268,13 +278,13 @@ export default function Playlist({
                                             {track.genre || "Unknown"}
                                         </span>
                                     </div>
-                                    <div className="col-span-1 text-gray-500 dark:text-gray-400">
+                                    <div className={`col-span-1 ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}>
                                         {track.duration ? formatDuration(track.duration) : ""}
                                     </div>
-                                    <div className="col-span-1 flex gap-2 items-center">
+                                    <div className="col-span-2 flex gap-2 items-center">
                                         {/* Favorite icon (show only) */}
                                         <span
-                                            className="inline-flex items-center justify-center rounded-full bg-pink-50 w-9 h-9"
+                                            className="inline-flex items-center p-[2px] justify-center rounded-full bg-pink-50 w-9 h-9"
                                             title="Favorite"
                                         >
                                             <HeartIcon className="w-5 h-5 text-pink-500" />
@@ -284,7 +294,7 @@ export default function Playlist({
                                             type="button"
                                             onClick={() => handleCopyTrack(track)}
                                             aria-label="Copy track"
-                                            className="inline-flex items-center justify-center rounded-full bg-green-50 w-9 h-9 hover:bg-green-100 focus:outline-none"
+                                            className="inline-flex items-center p-[2px] justify-center rounded-full bg-green-50 w-9 h-9 hover:bg-green-100 focus:outline-none"
                                         >
                                             <CopyIcon className="w-5 h-5 text-green-600" />
                                         </button>
@@ -293,7 +303,7 @@ export default function Playlist({
                                             type="button"
                                             onClick={() => handleDeleteTrack(track._id)}
                                             aria-label="Delete track"
-                                            className="inline-flex items-center justify-center rounded-full bg-gray-50 w-9 h-9 hover:bg-red-50 focus:outline-none"
+                                            className="inline-flex items-center p-[2px] justify-center rounded-full bg-gray-50 w-9 h-9 hover:bg-red-50 focus:outline-none"
                                         >
                                             <TrashIcon className="w-5 h-5 text-gray-400 hover:text-red-500" />
                                         </button>

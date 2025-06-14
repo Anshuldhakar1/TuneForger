@@ -154,7 +154,7 @@ export default function Header(
                                         transition-all
                                         duration-300
                                         ${isSpotifyHovered ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-8"}
-                                        ${isDarkMode ? "text-gray-900" : "text-gray-900"}
+                                        ${isDarkMode ? "text-white" : "text-gray-900"}
                                         `}
                                     style={{
                                         transition: "all 0.3s cubic-bezier(.4,0,.2,1)"
