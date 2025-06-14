@@ -4,7 +4,6 @@ import Hero from "@/components/App/Hero";
 import GeneratorForm from "@/components/App/GeneratorForm";
 import Presets from "@/components/App/Presets";
 import SocialBtn from "@/components/App/SocialBtn";
-import DisconnectModal from "@/components/App/DisconnectModal";
 import LoadingOverlay from "@/components/App/LoadingOverlay";
 
 import { useState } from "react";
@@ -66,13 +65,6 @@ const HomePage = (
                 isSocialButtonHovered={isSocialButtonHovered}
                 setIsSocialButtonHovered={setIsSocialButtonHovered}
                 handleShare={handleShare}
-            />
-
-            <DisconnectModal
-                show={showDisconnectConfirm}
-                isDarkMode={isDarkMode}
-                onClose={() => setShowDisconnectConfirm(false)}
-                onConfirm={confirmDisconnect}
             />
 
             <LoadingOverlay isGenerating={isGenerating} isDarkMode={isDarkMode} />

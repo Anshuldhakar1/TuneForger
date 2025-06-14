@@ -5,6 +5,8 @@ import { useState } from "react";
 import Background from "@/components/App/Background";
 import HomePage from "./HomePage";
 import Header from "@/components/App/Header";
+import Playlists from "./Playlists";
+import DisconnectModal from "@/components/App/DisconnectModal";
 
 export default function App() {
 
@@ -64,19 +66,42 @@ export default function App() {
           handleDisconnectSpotify={() => setShowDisconnectConfirm(true)}
           isDropdownOpen={isDropdownOpen}
           setIsDropdownOpen={setIsDropdownOpen}
+          setCurrentPage={setCurrentPage}
       />
 
-      <HomePage
-        setCurrentPage={setCurrentPage}
-        isDarkMode={isDarkMode}
-        isSocialButtonHovered={isSocialButtonHovered}
-        setIsSocialButtonHovered={setIsSocialButtonHovered}
-        handleShare={handleShare}
-        showDisconnectConfirm={showDisconnectConfirm}
-        setShowDisconnectConfirm={setShowDisconnectConfirm}
-        confirmDisconnect={confirmDisconnect}
-      />
+      { currentPage === "home" && 
+        <HomePage
+          isDarkMode={isDarkMode}
+          setCurrentPage={setCurrentPage}
+          isSocialButtonHovered={isSocialButtonHovered}
+          setIsSocialButtonHovered={setIsSocialButtonHovered}
+          handleShare={handleShare}
+          showDisconnectConfirm={showDisconnectConfirm}
+          setShowDisconnectConfirm={setShowDisconnectConfirm}
+          confirmDisconnect={confirmDisconnect}
+        />
+      }
 
+      { currentPage === "playlists" && 
+        <Playlists
+          isDarkMode={isDarkMode}
+          setCurrentPage={setCurrentPage}
+          isSocialButtonHovered={isSocialButtonHovered}
+          setIsSocialButtonHovered={setIsSocialButtonHovered}
+          handleShare={handleShare}
+        />
+      }
+      
+      {/* Add any additional components or modals here */}
+
+      
+      
+      <DisconnectModal
+          show={showDisconnectConfirm}
+          isDarkMode={isDarkMode}
+          onClose={() => setShowDisconnectConfirm(false)}
+          onConfirm={confirmDisconnect}
+      />
     </div>
   );
 }
