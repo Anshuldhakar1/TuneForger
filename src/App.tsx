@@ -1,6 +1,7 @@
 // src/app/page.tsx
 "use client";
-
+import { useConvexAuth } from "convex/react";
+import { useAuthActions } from "@convex-dev/auth/react";
 import { useState, useEffect, useCallback } from "react";
 import Background from "@/components/App/Background";
 import HomePage from "./HomePage";
@@ -8,8 +9,10 @@ import Header from "@/components/App/Header";
 import Playlists from "./Playlists";
 import DisconnectModal from "@/components/App/DisconnectModal";
 import Playlist from "./Playlist";
-
+import Login from "./Login";
+import LogOutModal from "./components/App/LogOutModal";
 export default function App() {
+  const { isAuthenticated, isLoading } = useConvexAuth();
 
   const [currentPage, setCurrentPage] = useState<"home" | "playlists" | "gen_playlist">("home");
   const [currentViewPlaylistId, setCurrentViewPlaylistId] = useState<string>("");
@@ -23,6 +26,10 @@ export default function App() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isSpotifyHovered, setIsSpotifyHovered] = useState(false);
   const [isSocialButtonHovered, setIsSocialButtonHovered] = useState(false);
+
+  const { signOut } = useAuthActions();
+
+  const [logOutModalOpen, setLogOutModalOpen] = useState(false);
 
   // --- Handlers ---
 
@@ -94,7 +101,21 @@ export default function App() {
     }
   };
 
+  // --- AUTH GATE ---
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900">
+        <div className="w-8 h-8 border-4 border-green-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Login isDarkMode={isDarkMode} />;
+  }
+
   return (
+
     <div
       className={`min-h-screen transition-all duration-500 ${isDarkMode ? "bg-gray-900 text-white" : "bg-white text-gray-900"
         }`}
@@ -111,6 +132,7 @@ export default function App() {
           handleDisconnectSpotify={() => setShowDisconnectConfirm(true)}
           isDropdownOpen={isDropdownOpen}
           setIsDropdownOpen={setIsDropdownOpen}
+          setLogOutModalOpen={setLogOutModalOpen}
           navigateTo={navigateTo}
       />
 
@@ -152,6 +174,17 @@ export default function App() {
           isDarkMode={isDarkMode}
           onClose={() => setShowDisconnectConfirm(false)}
           onConfirm={confirmDisconnect}
+      />
+
+      <LogOutModal
+        show={logOutModalOpen} // This can be controlled by a state if needed
+        isDarkMode={isDarkMode}
+        onClose={() => { setLogOutModalOpen(false); }} // Implement close logic
+        onConfirm={() => {
+          setLogOutModalOpen(false);
+          void signOut();
+          navigateTo("home");
+        }} // Implement logout logic
       />
     </div>
   );

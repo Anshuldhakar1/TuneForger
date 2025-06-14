@@ -199,11 +199,11 @@ export default function Playlists({
 
             {/* Playlists Grid/List */}
             <div
-                className={
+                className={`transition-all duration-200 ${
                     viewMode === "grid"
                         ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
                         : "space-y-4"
-                }
+                }`}
             >
                 {filteredPlaylists.map((playlist, index) => {
                     // Pick a color for the card (fallback if not in DB)

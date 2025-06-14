@@ -1,5 +1,6 @@
-import { Sun,Moon,User,Settings,List,ChevronDown } from "lucide-react";
+import { Sun,Moon,User,Settings,List,ChevronDown, LogOut } from "lucide-react";
 import { useRef, useEffect } from "react";
+import { useAuthActions } from "@convex-dev/auth/react";
 
 const CustomLogo = () => (
     <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -20,6 +21,7 @@ interface HeaderProps {
     handleDisconnectSpotify: () => void;
     toggleDarkMode: () => void;
     setIsDropdownOpen: (dropdownState: boolean) => void;
+    setLogOutModalOpen: (open: boolean) => void;
     navigateTo: (page: "home" | "playlists" | "gen_playlist", playlistId?: string) => void;
 };
 
@@ -34,6 +36,7 @@ export default function Header(
         handleDisconnectSpotify,
         toggleDarkMode,
         setIsDropdownOpen,
+        setLogOutModalOpen,
         navigateTo,
     }: HeaderProps
 ) {
@@ -179,10 +182,10 @@ export default function Header(
                         </button>
 
                         {/* Profile Dropdown */}
-                        <div className="relative" ref={dropdownRef}>
+                        <div className="relative " ref={dropdownRef}>
                             <button
                                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                                className={`flex items-center space-x-2 p-2 rounded-xl transition-all duration-200 transform hover:scale-105 ${isDarkMode ? "hover:bg-gray-800 border border-gray-700" : "hover:bg-gray-100 border border-gray-200"
+                                className={`border-2 hover:border-green-500 flex items-center space-x-2 p-2 rounded-xl transition-all duration-200 transform hover:scale-105 ${isDarkMode ? "hover:bg-gray-800 border border-gray-700" : "hover:bg-gray-100 border border-gray-200"
                                     }`}
                             >
                                 <div className="w-8 h-8 bg-[#28a745] rounded-full flex items-center justify-center">
@@ -228,6 +231,21 @@ export default function Header(
                                     </div>
                                 )
                             }
+                        </div>
+
+                        <div className="group border-2 border-gray-300 rounded-full overflow-hidden relative hover:cursor-pointer hover:border-red-500 transition-all duration-200">
+                            <button
+                                onClick={() => {
+                                    setIsDropdownOpen(false);
+                                    setLogOutModalOpen(true);
+                                }}
+                                className={`group-hover:bg-red-200 focus:bg-red-200 w-full px-4 py-3 text-left text-sm flex items-center space-x-3 transition-colors border-t ${isDarkMode
+                                        ? "text-red-400 border-gray-700 hover:bg-gray-700/50"
+                                        : "text-red-600 border-gray-200 hover:bg-gray-100"
+                                    }`}
+                            >
+                                <LogOut className="w-4 h-4" />
+                            </button>
                         </div>
                     </div>
                 </div>
