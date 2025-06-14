@@ -86,15 +86,10 @@ export default function App() {
         <Playlists
           isDarkMode={isDarkMode}
           setCurrentPage={setCurrentPage}
-          isSocialButtonHovered={isSocialButtonHovered}
-          setIsSocialButtonHovered={setIsSocialButtonHovered}
-          handleShare={handleShare}
         />
       }
       
       {/* Add any additional components or modals here */}
-
-      
       
       <DisconnectModal
           show={showDisconnectConfirm}
