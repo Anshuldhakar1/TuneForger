@@ -77,7 +77,7 @@ export default function Playlist({
         if (data?.tracks) setTracks(data.tracks);
     }, [data?.tracks]);
 
-    // Copy track
+    // Copy trackb
     const handleCopyTrack = (track: any) => {
         navigator.clipboard.writeText(`${track.name} - ${track.artist}`);
         toast.success("Track copied!");

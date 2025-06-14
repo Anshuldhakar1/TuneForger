@@ -1,4 +1,5 @@
 import { Sun,Moon,User,Settings,List,ChevronDown } from "lucide-react";
+import { useRef, useEffect } from "react";
 
 const CustomLogo = () => (
     <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -36,6 +37,24 @@ export default function Header(
         navigateTo,
     }: HeaderProps
 ) {
+    const dropdownRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (!isDropdownOpen) return;
+
+        function handleClickOutside(event: MouseEvent) {
+            if (
+                dropdownRef.current &&
+                !dropdownRef.current.contains(event.target as Node)
+            ) {
+                setIsDropdownOpen(false);
+            }
+        }
+
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, [isDropdownOpen, setIsDropdownOpen]);
+
     return (
         <header
             className={`backdrop-blur-md shadow-sm border-b relative z-20 transition-all duration-300 ${isDarkMode ? "bg-gray-900/90 border-gray-800" : "bg-white/90 border-gray-200"
@@ -160,7 +179,7 @@ export default function Header(
                         </button>
 
                         {/* Profile Dropdown */}
-                        <div className="relative">
+                        <div className="relative" ref={dropdownRef}>
                             <button
                                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                                 className={`flex items-center space-x-2 p-2 rounded-xl transition-all duration-200 transform hover:scale-105 ${isDarkMode ? "hover:bg-gray-800 border border-gray-700" : "hover:bg-gray-100 border border-gray-200"
@@ -186,8 +205,8 @@ export default function Header(
                                         {/* The intermediate div has been removed */}
                                         <button
                                             onClick={() => {
-                                                navigateTo("playlists");
                                                 setIsDropdownOpen(false);
+                                                navigateTo("playlists");
                                             }}
                                             className={`w-full px-4 py-3 text-left text-sm flex items-center space-x-3 transition-colors ${isDarkMode
                                                     ? "text-gray-300 hover:bg-gray-700/50"
