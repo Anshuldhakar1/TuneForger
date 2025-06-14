@@ -1,4 +1,3 @@
-// src/app/page.tsx
 "use client";
 import { useConvexAuth } from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
@@ -11,6 +10,8 @@ import DisconnectModal from "@/components/App/DisconnectModal";
 import Playlist from "./Playlist";
 import Login from "./Login";
 import LogOutModal from "./components/App/LogOutModal";
+import { useSpotifyConnection } from "@/util/SpotifyConnectionHandler";
+
 export default function App() {
   const { isAuthenticated, isLoading } = useConvexAuth();
 
@@ -19,7 +20,7 @@ export default function App() {
 
   // State for UI modes and connectivity
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [isSpotifyConnected, setIsSpotifyConnected] = useState(true);
+  const [isSpotifyConnected, setIsSpotifyConnected] = useState(false);
   const [showDisconnectConfirm, setShowDisconnectConfirm] = useState(false);
 
   // State for child component interactions
@@ -28,10 +29,13 @@ export default function App() {
   const [isSocialButtonHovered, setIsSocialButtonHovered] = useState(false);
 
   const { signOut } = useAuthActions();
-
   const [logOutModalOpen, setLogOutModalOpen] = useState(false);
+  const { connectSpotify, handleDisconnect, isConnecting, spotifyTokens } = useSpotifyConnection();
 
-  // --- Handlers ---
+  // Update Spotify connection status based on tokens
+  useEffect(() => {
+    setIsSpotifyConnected(!!spotifyTokens);
+  }, [spotifyTokens]);
 
   // Navigation helper
   const navigateTo = useCallback((page: "home" | "playlists" | "gen_playlist", playlistId = "") => {
@@ -64,7 +68,6 @@ export default function App() {
 
     window.addEventListener("popstate", onPopState);
 
-    // On mount, push the initial state if not present
     if (!window.history.state) {
       window.history.replaceState(
         { page: currentPage, playlistId: currentViewPlaylistId },
@@ -76,10 +79,17 @@ export default function App() {
     return () => window.removeEventListener("popstate", onPopState);
   }, []);
 
-  const confirmDisconnect = () => {
-    setIsSpotifyConnected(false);
+  const confirmDisconnect = async () => {
+    const success = await handleDisconnect();
+    if (success) {
+      setIsSpotifyConnected(false);
+    }
     setShowDisconnectConfirm(false);
   };
+
+  const handleDisconnectSpotify = () => {
+    setShowDisconnectConfirm(true);
+  }
 
   const toggleDarkMode = () => {
     setIsDarkMode(!isDarkMode);
@@ -101,7 +111,7 @@ export default function App() {
     }
   };
 
-  // --- AUTH GATE ---
+  // AUTH GATE
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900">
@@ -115,7 +125,6 @@ export default function App() {
   }
 
   return (
-
     <div
       className={`min-h-screen transition-all duration-500 ${isDarkMode ? "bg-gray-900 text-white" : "bg-white text-gray-900"
         }`}
@@ -123,20 +132,22 @@ export default function App() {
       <Background isDarkMode={isDarkMode} />
 
       <Header
-          isDarkMode={isDarkMode}
-          toggleDarkMode={toggleDarkMode}
-          isSpotifyConnected={isSpotifyConnected}
-          setIsSpotifyConnected={setIsSpotifyConnected}
-          isSpotifyHovered={isSpotifyHovered}
-          setIsSpotifyHovered={setIsSpotifyHovered}
-          handleDisconnectSpotify={() => setShowDisconnectConfirm(true)}
-          isDropdownOpen={isDropdownOpen}
-          setIsDropdownOpen={setIsDropdownOpen}
-          setLogOutModalOpen={setLogOutModalOpen}
-          navigateTo={navigateTo}
+        isDarkMode={isDarkMode}
+        toggleDarkMode={toggleDarkMode}
+        isSpotifyConnected={isSpotifyConnected}
+        isSpotifyConnecting={isConnecting} // Add this
+        setIsSpotifyConnected={setIsSpotifyConnected}
+        isSpotifyHovered={isSpotifyHovered}
+        setIsSpotifyHovered={(hovered: boolean) => { setIsSpotifyHovered(hovered); return true; }}
+        handleDisconnectSpotify={handleDisconnectSpotify}
+        isDropdownOpen={isDropdownOpen}
+        setIsDropdownOpen={setIsDropdownOpen}
+        setLogOutModalOpen={setLogOutModalOpen}
+        navigateTo={navigateTo}
+        connectSpotify={connectSpotify}
       />
 
-      { currentPage === "home" && 
+      {currentPage === "home" && (
         <HomePage
           isDarkMode={isDarkMode}
           navigateTo={navigateTo}
@@ -147,44 +158,42 @@ export default function App() {
           setShowDisconnectConfirm={setShowDisconnectConfirm}
           confirmDisconnect={confirmDisconnect}
         />
-      }
+      )}
 
-      { currentPage === "playlists" && 
+      {currentPage === "playlists" && (
         <Playlists
           isDarkMode={isDarkMode}
           navigateTo={navigateTo}
           setCurrentViewPlaylistId={setCurrentViewPlaylistId}
         />
-      }
+      )}
 
-      { 
-        currentPage === "gen_playlist" && currentViewPlaylistId !== "" &&
-        <Playlist 
+      {currentPage === "gen_playlist" && currentViewPlaylistId !== "" && (
+        <Playlist
           isDarkMode={isDarkMode}
           navigateTo={navigateTo}
           currentViewPlaylistId={currentViewPlaylistId}
+          spotifyTokens={spotifyTokens}
         />
+      )}
 
-      }
-      
-      {/* Add any additional components or modals here */}
-      
       <DisconnectModal
-          show={showDisconnectConfirm}
-          isDarkMode={isDarkMode}
-          onClose={() => setShowDisconnectConfirm(false)}
-          onConfirm={confirmDisconnect}
+        show={showDisconnectConfirm}
+        isDarkMode={isDarkMode}
+        onClose={() => setShowDisconnectConfirm(false)}
+        onConfirm={confirmDisconnect}
       />
 
       <LogOutModal
-        show={logOutModalOpen} // This can be controlled by a state if needed
+        show={logOutModalOpen}
         isDarkMode={isDarkMode}
-        onClose={() => { setLogOutModalOpen(false); }} // Implement close logic
+        onClose={() => { setLogOutModalOpen(false); }}
         onConfirm={() => {
           setLogOutModalOpen(false);
           void signOut();
+          setIsSpotifyConnected(false);
           navigateTo("home");
-        }} // Implement logout logic
+        }}
       />
     </div>
   );

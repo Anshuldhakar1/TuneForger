@@ -1,6 +1,8 @@
 import { Sun,Moon,User,Settings,List,ChevronDown, LogOut } from "lucide-react";
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import { useAuthActions } from "@convex-dev/auth/react";
+import { toast } from "sonner";
+import { useSpotifyConnection } from "@/util/SpotifyConnectionHandler";
 
 const CustomLogo = () => (
     <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -15,14 +17,16 @@ interface HeaderProps {
     isDarkMode: boolean;
     isSpotifyHovered: boolean;
     isSpotifyConnected: boolean;
+    isSpotifyConnecting: boolean; // Add this
     isDropdownOpen: boolean;
-    setIsSpotifyHovered: (spotifyHovered: boolean) => void;
+    setIsSpotifyHovered: (spotifyHovered: boolean) => Boolean;
     setIsSpotifyConnected: (setSpotify: boolean) => void;
     handleDisconnectSpotify: () => void;
     toggleDarkMode: () => void;
     setIsDropdownOpen: (dropdownState: boolean) => void;
     setLogOutModalOpen: (open: boolean) => void;
     navigateTo: (page: "home" | "playlists" | "gen_playlist", playlistId?: string) => void;
+    connectSpotify: () => Promise<Boolean>;
 };
 
 export default function Header(
@@ -30,6 +34,7 @@ export default function Header(
         isDarkMode,
         isSpotifyHovered, 
         isSpotifyConnected,
+        isSpotifyConnecting, // Add this
         isDropdownOpen,
         setIsSpotifyHovered,
         setIsSpotifyConnected,
@@ -38,6 +43,7 @@ export default function Header(
         setIsDropdownOpen,
         setLogOutModalOpen,
         navigateTo,
+        connectSpotify,
     }: HeaderProps
 ) {
     const dropdownRef = useRef<HTMLDivElement>(null);
@@ -57,6 +63,16 @@ export default function Header(
         document.addEventListener("mousedown", handleClickOutside);
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, [isDropdownOpen, setIsDropdownOpen]);
+
+    const handleSpotifyConnection = async () => {
+
+        const result = await connectSpotify();
+        if (result) {
+            setIsSpotifyConnected(true);
+        } else {
+            toast.error("Failed to connect to Spotify. Please try again.");
+        }
+    }
 
     return (
         <header
@@ -79,12 +95,20 @@ export default function Header(
                             className={`
                                 group
                                 flex items-center
-                                border-2
+                                border-[3px] border-solid
                                 rounded-full
                                 transition-all
                                 duration-300
-                                cursor-pointer
                                 overflow-hidden
+                                ${isSpotifyConnecting 
+                                    ? "cursor-not-allowed opacity-50" 
+                                    : "cursor-pointer"
+                                }
+                                ${
+                                    !isSpotifyConnected
+                                        ? "border-red-500 hover:border-green-600"
+                                        : "border-green-500 hover:border-red-600"
+                                }
                                 ${isSpotifyConnected
                                     ? isSpotifyHovered
                                         ? isDarkMode
@@ -101,20 +125,22 @@ export default function Header(
                                             ? "bg-gray-800 border-gray-400"
                                             : "bg-gray-50 border-gray-400"
                                 }
-    `}
+                            `}
                             style={{
-                                width: isSpotifyHovered ? 210 : 64, // 210px for pill, 64px for circle
-                                height: 64, // 64px height for perfect circle
+                                width: isSpotifyHovered ? 210 : 64,
+                                height: 64,
                                 paddingLeft: 0,
                                 paddingRight: 0,
                                 transition: "all 0.3s cubic-bezier(.4,0,.2,1)"
                             }}
-                            onMouseEnter={() => setIsSpotifyHovered(true)}
-                            onMouseLeave={() => setIsSpotifyHovered(false)}
+                            onMouseEnter={() => !isSpotifyConnecting && setIsSpotifyHovered(true)}
+                            onMouseLeave={() => !isSpotifyConnecting && setIsSpotifyHovered(false)}
                             onClick={
-                                isSpotifyConnected
-                                    ? handleDisconnectSpotify
-                                    : () => setIsSpotifyConnected(true)
+                                isSpotifyConnecting 
+                                    ? undefined 
+                                    : isSpotifyConnected
+                                        ? handleDisconnectSpotify
+                                        : handleSpotifyConnection
                             }
                         >
                             {/* Icon - always centered in its own flex container */}
@@ -168,6 +194,7 @@ export default function Header(
                             </div>
                         </div>
                     </div>
+                    
                     {/* Right - Dark Mode Toggle and Profile Dropdown */}
                     <div className="flex items-center space-x-3 animate-fade-in" style={{ animationDelay: "0.2s" }}>
                         {/* Dark Mode Toggle */}

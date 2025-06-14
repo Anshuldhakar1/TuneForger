@@ -53,12 +53,14 @@ interface PlaylistProps {
     isDarkMode: boolean;
     navigateTo: (page: "home" | "playlists" | "gen_playlist", playlistId?: string) => void;
     currentViewPlaylistId: string;
+    spotifyTokens: any; 
 }
 
 export default function Playlist({
     isDarkMode,
     navigateTo,
     currentViewPlaylistId,
+    spotifyTokens,
 }: PlaylistProps) {
 
     const [isEditingDescription, setIsEditingDescription] = useState(false);
@@ -129,7 +131,12 @@ export default function Playlist({
                     </div>
                     <div className="flex-1 flex flex-col justify-end">
                         <h1 className={`text-4xl font-bold mb-2 ${isDarkMode ? "text-white" : "text-gray-900"}`}>
-                            {playlist.name}
+                            <span>{playlist.name}</span>
+                            { spotifyTokens && <span className="text-sm text-gray-500 ml-2" style={{float:"right"}}>
+                                <button >
+                                    Transfer to Spotify
+                                </button>
+                            </span> }
                         </h1>
                         <div className="mb-2">
                             <span className={`text-base font-semibold ${isDarkMode ? "text-gray-100" : "text-gray-700"}`}>
