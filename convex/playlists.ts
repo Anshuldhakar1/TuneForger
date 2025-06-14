@@ -187,20 +187,12 @@ export const updatePlaylistSpotifyUrl = mutation({
   args: {
     playlistId: v.id("playlists"),
     spotifyUrl: v.string(),
+    imageUrl: v.optional(v.string()), // <-- Add this
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) {
-      throw new Error("Not authenticated");
-    }
-
-    const playlist = await ctx.db.get(args.playlistId);
-    if (!playlist || playlist.userId !== userId) {
-      throw new Error("Playlist not found");
-    }
-
     await ctx.db.patch(args.playlistId, {
       spotifyUrl: args.spotifyUrl,
+      ...(args.imageUrl ? { imageUrl: args.imageUrl } : {}),
     });
   },
 });
@@ -221,30 +213,28 @@ export const updateTrackSpotifyData = mutation({
       throw new Error("Not authenticated");
     }
 
-    const playlist = await ctx.db.get(args.playlistId);
-    if (!playlist || playlist.userId !== userId) {
-      throw new Error("Playlist not found");
-    }
-
     // Find the track to update
     const tracks = await ctx.db
       .query("tracks")
       .withIndex("by_playlist", (q) => q.eq("playlistId", args.playlistId))
       .collect();
 
-    const track = tracks.find(t => 
-      t.name.toLowerCase() === args.trackName.toLowerCase() && 
-      t.artist.toLowerCase() === args.trackArtist.toLowerCase()
+    const trackToUpdate = tracks.find(
+      (track) => track.name === args.trackName && track.artist === args.trackArtist
     );
 
-    if (track) {
-      await ctx.db.patch(track._id, {
-        spotifyId: args.spotifyId,
-        previewUrl: args.previewUrl,
-        imageUrl: args.imageUrl,
-        duration: args.duration,
-      });
+    if (!trackToUpdate) {
+      throw new Error("Track not found");
     }
+
+    // Update the track with only non-null values
+    const updateData: any = {};
+    if (args.spotifyId) updateData.spotifyId = args.spotifyId;
+    if (args.previewUrl) updateData.previewUrl = args.previewUrl;
+    if (args.imageUrl) updateData.imageUrl = args.imageUrl;
+    if (args.duration !== undefined) updateData.duration = args.duration;
+
+    await ctx.db.patch(trackToUpdate._id, updateData);
   },
 });
 

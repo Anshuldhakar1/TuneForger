@@ -12,10 +12,11 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useQuery, useMutation } from "convex/react";
+import { useQuery, useMutation, useAction } from "convex/react";
 import { api } from "../convex/_generated/api";
 import { toast } from "sonner";
 import type { Id } from "../convex/_generated/dataModel";
+
 
 // Spotify-themed sync icon component
 const SpotifySyncIcon = ({ className }: { className?: string }) => (
@@ -39,6 +40,7 @@ export default function Playlists({
 }: PlaylistsProps) {
     // Fetch playlists from backend
     const playlists = useQuery(api.playlists.getUserPlaylists) || [];
+    const cleanupAction = useAction(api.spotify.cleanupNonExistentTracks);
 
     // UI state
     const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
@@ -57,6 +59,15 @@ export default function Playlists({
                 : [...prev, playlistId]
         );
     };
+
+    // const handleCleanup = async () => {
+    //     try {
+    //         const result = await cleanupAction({});
+    //         toast.success(`Cleanup complete! Checked ${result.totalChecked} tracks, ${result.notFoundCount} not found, ${result.updatedCount} updated.`);
+    //     } catch (error) {
+    //         toast.error(`Cleanup failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    //     }
+    //   };
 
     const handleDelete = async (
         playlistId: Id<"playlists">,
@@ -126,6 +137,13 @@ export default function Playlists({
                 >
                     Discover and manage your curated music collections
                 </p>
+                {/* <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCleanup}
+                >
+                    Cleanup
+                </Button> */}
             </div>
 
             {/* Controls */}
