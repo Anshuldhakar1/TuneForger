@@ -10,25 +10,25 @@ import { useState } from "react";
 
 interface HomePageProps {
     isDarkMode: boolean;
-    setShowDisconnectConfirm: (value: boolean) => void;
-    setCurrentPage: (page: "home" | "playlists" | "gen_playlist") => void;   
+    setShowDisconnectConfirm: (value: boolean) => void; 
     isSocialButtonHovered: boolean;
     setIsSocialButtonHovered: (value: boolean) => void;
     handleShare: () => void;                                                        
     showDisconnectConfirm: boolean;
     confirmDisconnect: () => void;
+    navigateTo: (page: "home" | "playlists" | "gen_playlist", playlistId?: string) => void;
 }
 
 const HomePage = (
     { 
         isDarkMode,
         setShowDisconnectConfirm,
-        setCurrentPage,
         isSocialButtonHovered,
         setIsSocialButtonHovered,
         handleShare,
         showDisconnectConfirm,
         confirmDisconnect,
+        navigateTo,
     }: HomePageProps
 ) => {
 
@@ -50,7 +50,7 @@ const HomePage = (
                     setIsGenerating={setIsGenerating}
                     playlistName={playlistName}
                     setPlaylistName={setPlaylistName}
-                    setCurrentPage={setCurrentPage}
+                    navigateTo={navigateTo}
                 />
 
                 <Presets

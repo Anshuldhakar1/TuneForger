@@ -17,7 +17,7 @@ interface GeneratorFormProps {
     setPrompt: (value: string) => void;
     setIsGenerating: (value: boolean) => void;
     setPlaylistName: (value: string) => void;
-    setCurrentPage: (page: "home" | "playlists" | "gen_playlist") => void;
+    navigateTo: (page: "home" | "playlists" | "gen_playlist", playlistId?: string) => void;
 }
 
 export default function GeneratorForm({
@@ -28,7 +28,7 @@ export default function GeneratorForm({
     setPrompt,
     setIsGenerating,
     setPlaylistName,
-    setCurrentPage,
+    navigateTo,
 }: GeneratorFormProps) {
 
     const generatePlaylist = useAction(api.playlists.generatePlaylist);
@@ -48,7 +48,7 @@ export default function GeneratorForm({
             setPlaylistName("");
 
             setTimeout(() => { 
-                setCurrentPage("playlists");
+                navigateTo("playlists");
             }, 2000);
 
         } catch (error) {

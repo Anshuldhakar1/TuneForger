@@ -19,7 +19,7 @@ interface HeaderProps {
     handleDisconnectSpotify: () => void;
     toggleDarkMode: () => void;
     setIsDropdownOpen: (dropdownState: boolean) => void;
-    setCurrentPage: (page: "home" | "playlists" | "gen_playlist") => void;
+    navigateTo: (page: "home" | "playlists" | "gen_playlist", playlistId?: string) => void;
 };
 
 export default function Header(
@@ -33,7 +33,7 @@ export default function Header(
         handleDisconnectSpotify,
         toggleDarkMode,
         setIsDropdownOpen,
-        setCurrentPage,
+        navigateTo,
     }: HeaderProps
 ) {
     return (
@@ -44,7 +44,7 @@ export default function Header(
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between items-center h-16">
                     {/* App Name with Simplified Logo */}
-                    <div className="flex items-center space-x-3 animate-fade-in hover:cursor-pointer" onClick={() => { setCurrentPage("home"); }}>
+                    <div className="flex items-center space-x-3 animate-fade-in hover:cursor-pointer" onClick={() => { navigateTo("home"); }}>
                         <div className="transform hover:scale-110 transition-transform duration-200">
                             <CustomLogo />
                         </div>
@@ -186,7 +186,7 @@ export default function Header(
                                         {/* The intermediate div has been removed */}
                                         <button
                                             onClick={() => {
-                                                setCurrentPage("playlists");
+                                                navigateTo("playlists");
                                                 setIsDropdownOpen(false);
                                             }}
                                             className={`w-full px-4 py-3 text-left text-sm flex items-center space-x-3 transition-colors ${isDarkMode

@@ -1,7 +1,7 @@
 // src/app/page.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Background from "@/components/App/Background";
 import HomePage from "./HomePage";
 import Header from "@/components/App/Header";
@@ -25,6 +25,49 @@ export default function App() {
   const [isSocialButtonHovered, setIsSocialButtonHovered] = useState(false);
 
   // --- Handlers ---
+
+  // Navigation helper
+  const navigateTo = useCallback((page: "home" | "playlists" | "gen_playlist", playlistId = "") => {
+    setCurrentPage(page);
+    setCurrentViewPlaylistId(playlistId);
+
+    let url = "/";
+    if (page === "playlists") url = "/playlists";
+    if (page === "gen_playlist" && playlistId) url = `/playlist/${playlistId}`;
+
+    window.history.pushState(
+      { page, playlistId },
+      "",
+      url
+    );
+  }, []);
+
+  // Listen for browser navigation
+  useEffect(() => {
+    const onPopState = (event: PopStateEvent) => {
+      const state = event.state;
+      if (state && state.page) {
+        setCurrentPage(state.page);
+        setCurrentViewPlaylistId(state.playlistId || "");
+      } else {
+        setCurrentPage("home");
+        setCurrentViewPlaylistId("");
+      }
+    };
+
+    window.addEventListener("popstate", onPopState);
+
+    // On mount, push the initial state if not present
+    if (!window.history.state) {
+      window.history.replaceState(
+        { page: currentPage, playlistId: currentViewPlaylistId },
+        "",
+        window.location.pathname
+      );
+    }
+
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
 
   const confirmDisconnect = () => {
     setIsSpotifyConnected(false);
@@ -68,13 +111,13 @@ export default function App() {
           handleDisconnectSpotify={() => setShowDisconnectConfirm(true)}
           isDropdownOpen={isDropdownOpen}
           setIsDropdownOpen={setIsDropdownOpen}
-          setCurrentPage={setCurrentPage}
+          navigateTo={navigateTo}
       />
 
       { currentPage === "home" && 
         <HomePage
           isDarkMode={isDarkMode}
-          setCurrentPage={setCurrentPage}
+          navigateTo={navigateTo}
           isSocialButtonHovered={isSocialButtonHovered}
           setIsSocialButtonHovered={setIsSocialButtonHovered}
           handleShare={handleShare}
@@ -87,7 +130,7 @@ export default function App() {
       { currentPage === "playlists" && 
         <Playlists
           isDarkMode={isDarkMode}
-          setCurrentPage={setCurrentPage}
+          navigateTo={navigateTo}
           setCurrentViewPlaylistId={setCurrentViewPlaylistId}
         />
       }
@@ -96,7 +139,7 @@ export default function App() {
         currentPage === "gen_playlist" && currentViewPlaylistId !== "" &&
         <Playlist 
           isDarkMode={isDarkMode}
-          setCurrentPage={setCurrentPage}
+          navigateTo={navigateTo}
           currentViewPlaylistId={currentViewPlaylistId}
         />
 

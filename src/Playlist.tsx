@@ -51,13 +51,13 @@ const HeartIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 interface PlaylistProps {
     isDarkMode: boolean;
-    setCurrentPage: (page: "home" | "playlists" | "gen_playlist") => void;
+    navigateTo: (page: "home" | "playlists" | "gen_playlist", playlistId?: string) => void;
     currentViewPlaylistId: string;
 }
 
 export default function Playlist({
     isDarkMode,
-    setCurrentPage,
+    navigateTo,
     currentViewPlaylistId,
 }: PlaylistProps) {
 

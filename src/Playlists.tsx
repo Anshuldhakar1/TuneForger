@@ -28,13 +28,13 @@ const SpotifySyncIcon = ({ className }: { className?: string }) => (
 
 interface PlaylistsProps {
     isDarkMode: boolean;
-    setCurrentPage: (page: "home" | "playlists" | "gen_playlist") => void;
+    navigateTo: (page: "home" | "playlists" | "gen_playlist", playlistId?: string) => void;
     setCurrentViewPlaylistId: (id: string) => void;
 }
 
 export default function Playlists({
     isDarkMode,
-    setCurrentPage,
+    navigateTo,
     setCurrentViewPlaylistId,
 }: PlaylistsProps) {
     // Fetch playlists from backend
@@ -215,7 +215,7 @@ export default function Playlists({
                             key={playlist._id}
                             onClick={() => {
                                 setCurrentViewPlaylistId(playlist._id);
-                                setCurrentPage("gen_playlist");
+                                navigateTo("gen_playlist", playlist._id);
                             }}
                             className={`
                 group cursor-pointer transition-all duration-500 ease-out hover:scale-105
