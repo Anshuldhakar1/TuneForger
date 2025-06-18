@@ -1,4 +1,8 @@
-import { Sun,Moon,User,Settings,List,ChevronDown } from "lucide-react";
+import { Sun,Moon,User,Settings,List,ChevronDown, LogOut } from "lucide-react";
+import { useRef, useEffect, useState } from "react";
+import { useAuthActions } from "@convex-dev/auth/react";
+import { toast } from "sonner";
+import { useSpotifyConnection } from "@/util/SpotifyConnectionHandler";
 
 const CustomLogo = () => (
     <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -13,12 +17,16 @@ interface HeaderProps {
     isDarkMode: boolean;
     isSpotifyHovered: boolean;
     isSpotifyConnected: boolean;
+    isSpotifyConnecting: boolean; // Add this
     isDropdownOpen: boolean;
-    setIsSpotifyHovered: (spotifyHovered: boolean) => void;
+    setIsSpotifyHovered: (spotifyHovered: boolean) => Boolean;
     setIsSpotifyConnected: (setSpotify: boolean) => void;
     handleDisconnectSpotify: () => void;
     toggleDarkMode: () => void;
     setIsDropdownOpen: (dropdownState: boolean) => void;
+    setLogOutModalOpen: (open: boolean) => void;
+    navigateTo: (page: "home" | "playlists" | "gen_playlist", playlistId?: string) => void;
+    connectSpotify: () => Promise<Boolean>;
 };
 
 export default function Header(
@@ -26,23 +34,55 @@ export default function Header(
         isDarkMode,
         isSpotifyHovered, 
         isSpotifyConnected,
+        isSpotifyConnecting, // Add this
         isDropdownOpen,
         setIsSpotifyHovered,
         setIsSpotifyConnected,
         handleDisconnectSpotify,
         toggleDarkMode,
         setIsDropdownOpen,
+        setLogOutModalOpen,
+        navigateTo,
+        connectSpotify,
     }: HeaderProps
 ) {
+    const dropdownRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (!isDropdownOpen) return;
+
+        function handleClickOutside(event: MouseEvent) {
+            if (
+                dropdownRef.current &&
+                !dropdownRef.current.contains(event.target as Node)
+            ) {
+                setIsDropdownOpen(false);
+            }
+        }
+
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, [isDropdownOpen, setIsDropdownOpen]);
+
+    const handleSpotifyConnection = async () => {
+
+        const result = await connectSpotify();
+        if (result) {
+            setIsSpotifyConnected(true);
+        } else {
+            toast.error("Failed to connect to Spotify. Please try again.");
+        }
+    }
+
     return (
         <header
-            className={`backdrop-blur-md shadow-sm border-b relative z-10 transition-all duration-300 ${isDarkMode ? "bg-gray-900/90 border-gray-800" : "bg-white/90 border-gray-200"
+            className={`backdrop-blur-md shadow-sm border-b relative z-20 transition-all duration-300 ${isDarkMode ? "bg-gray-900/90 border-gray-800" : "bg-white/90 border-gray-200"
                 }`}
         >
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between items-center h-16">
                     {/* App Name with Simplified Logo */}
-                    <div className="flex items-center space-x-3 animate-fade-in">
+                    <div className="flex items-center space-x-3 animate-fade-in hover:cursor-pointer" onClick={() => { navigateTo("home"); }}>
                         <div className="transform hover:scale-110 transition-transform duration-200">
                             <CustomLogo />
                         </div>
@@ -50,35 +90,69 @@ export default function Header(
                     </div>
 
                     {/* Center - Enhanced Spotify Connection Component with Smooth Animations */}
-                    <div className="flex-1 flex justify-center px-8">
+                    <div className="flex-1 flex justify-center px-8 scale-75">
                         <div
-                            className={`flex items-center space-x-3 px-6 py-3 rounded-full border transition-all duration-500 cursor-pointer relative overflow-hidden ${isSpotifyConnected
-                                ? isSpotifyHovered
-                                    ? isDarkMode
-                                        ? "bg-red-900/20 border-red-500 shadow-lg"
-                                        : "bg-red-50 border-red-500 shadow-lg"
-                                    : isDarkMode
-                                        ? "bg-gray-800 border-gray-700 hover:border-[#28a745] shadow-md"
-                                        : "bg-gray-50 border-gray-200 hover:border-[#28a745] shadow-md"
-                                : isSpotifyHovered
-                                    ? isDarkMode
-                                        ? "bg-green-900/20 border-[#28a745] shadow-lg"
-                                        : "bg-green-50 border-[#28a745] shadow-lg"
-                                    : isDarkMode
-                                        ? "bg-gray-800 border-gray-700 hover:border-[#28a745] shadow-md"
-                                        : "bg-gray-50 border-gray-200 hover:border-[#28a745] shadow-md"
-                                }`}
-                            onMouseEnter={() => setIsSpotifyHovered(true)}
-                            onMouseLeave={() => setIsSpotifyHovered(false)}
-                            onClick={isSpotifyConnected ? handleDisconnectSpotify : () => setIsSpotifyConnected(true)}
+                            className={`
+                                group
+                                flex items-center
+                                border-[3px] border-solid
+                                rounded-full
+                                transition-all
+                                duration-300
+                                overflow-hidden
+                                ${isSpotifyConnecting 
+                                    ? "cursor-not-allowed opacity-50" 
+                                    : "cursor-pointer"
+                                }
+                                ${
+                                    !isSpotifyConnected
+                                        ? "border-red-500 hover:border-green-600"
+                                        : "border-green-500 hover:border-red-600"
+                                }
+                                ${isSpotifyConnected
+                                    ? isSpotifyHovered
+                                        ? isDarkMode
+                                            ? "bg-red-900/20 border-red-500 shadow-lg"
+                                            : "bg-red-50 border-red-500 shadow-lg"
+                                        : isDarkMode
+                                            ? "bg-gray-800 border-gray-400"
+                                            : "bg-gray-50 border-gray-400"
+                                    : isSpotifyHovered
+                                        ? isDarkMode
+                                            ? "bg-green-900/20 border-green-500 shadow-lg"
+                                            : "bg-green-50 border-green-500 shadow-lg"
+                                        : isDarkMode
+                                            ? "bg-gray-800 border-gray-400"
+                                            : "bg-gray-50 border-gray-400"
+                                }
+                            `}
+                            style={{
+                                width: isSpotifyHovered ? 210 : 64,
+                                height: 64,
+                                paddingLeft: 0,
+                                paddingRight: 0,
+                                transition: "all 0.3s cubic-bezier(.4,0,.2,1)"
+                            }}
+                            onMouseEnter={() => !isSpotifyConnecting && setIsSpotifyHovered(true)}
+                            onMouseLeave={() => !isSpotifyConnecting && setIsSpotifyHovered(false)}
+                            onClick={
+                                isSpotifyConnecting 
+                                    ? undefined 
+                                    : isSpotifyConnected
+                                        ? handleDisconnectSpotify
+                                        : handleSpotifyConnection
+                            }
                         >
-                            <div className="relative">
+                            {/* Icon - always centered in its own flex container */}
+                            <div className="flex items-center justify-center w-16 h-16 flex-shrink-0">
                                 <div
-                                    className={`w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all duration-500 ${isSpotifyConnected ? "border-[#28a745] bg-black" : "border-red-500 bg-white"
+                                    className={`w-10 h-10  relative left-[-1.75px] rounded-full border-2 flex items-center justify-center transition-all duration-300 ${isSpotifyConnected
+                                            ? "border-[#28a745] bg-black"
+                                            : "border-red-500 bg-white"
                                         }`}
                                 >
                                     <svg
-                                        className={`w-4 h-4 transition-all duration-500 ${isSpotifyConnected ? "text-[#1DB954]" : "text-gray-400"
+                                        className={`w-6 h-6 transition-all duration-300 ${isSpotifyConnected ? "text-[#1DB954]" : "text-gray-400"
                                             }`}
                                         viewBox="0 0 24 24"
                                         fill="currentColor"
@@ -88,38 +162,39 @@ export default function Header(
                                 </div>
                             </div>
 
-                            {/* Enhanced Text with Smooth Rotation Animation */}
-                            <div className="relative overflow-hidden h-6">
+                            {/* Sliding Text */}
+                            <div
+                                className={`
+                                    flex-1 flex items-center
+                                    overflow-hidden
+                                    transition-all
+                                    duration-300
+                                    ${isSpotifyHovered ? "pl-2" : ""}
+                                `}
+                                style={{
+                                    minWidth: 0
+                                }}
+                            >
                                 <span
-                                    className={`absolute inset-0 flex items-center text-sm font-medium transition-all duration-500 ${isDarkMode ? "text-white" : "text-gray-900"
-                                        } ${isSpotifyConnected
-                                            ? isSpotifyHovered
-                                                ? "transform -translate-y-full opacity-0"
-                                                : "transform translate-y-0 opacity-100"
-                                            : isSpotifyHovered
-                                                ? "transform -translate-y-full opacity-0"
-                                                : "transform translate-y-0 opacity-100"
-                                        }`}
-                                >
-                                    {isSpotifyConnected ? "Connected to Spotify" : "Disconnected from Spotify"}
-                                </span>
-                                <span
-                                    className={`absolute inset-0 flex items-center text-sm font-medium transition-all duration-500 ${isDarkMode ? "text-white" : "text-gray-900"
-                                        } ${isSpotifyConnected
-                                            ? isSpotifyHovered
-                                                ? "transform translate-y-0 opacity-100"
-                                                : "transform translate-y-full opacity-0"
-                                            : isSpotifyHovered
-                                                ? "transform translate-y-0 opacity-100"
-                                                : "transform translate-y-full opacity-0"
-                                        }`}
+                                    className={`
+                                        whitespace-nowrap
+                                        font-semibold
+                                        text-lg
+                                        transition-all
+                                        duration-300
+                                        ${isSpotifyHovered ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-8"}
+                                        ${isDarkMode ? "text-white" : "text-gray-900"}
+                                        `}
+                                    style={{
+                                        transition: "all 0.3s cubic-bezier(.4,0,.2,1)"
+                                    }}
                                 >
                                     {isSpotifyConnected ? "Disconnect" : "Connect"}
                                 </span>
                             </div>
                         </div>
                     </div>
-
+                    
                     {/* Right - Dark Mode Toggle and Profile Dropdown */}
                     <div className="flex items-center space-x-3 animate-fade-in" style={{ animationDelay: "0.2s" }}>
                         {/* Dark Mode Toggle */}
@@ -134,10 +209,10 @@ export default function Header(
                         </button>
 
                         {/* Profile Dropdown */}
-                        <div className="relative">
+                        <div className="relative " ref={dropdownRef}>
                             <button
                                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                                className={`flex items-center space-x-2 p-2 rounded-xl transition-all duration-200 transform hover:scale-105 ${isDarkMode ? "hover:bg-gray-800 border border-gray-700" : "hover:bg-gray-100 border border-gray-200"
+                                className={`border-2 hover:border-green-500 flex items-center space-x-2 p-2 rounded-xl transition-all duration-200 transform hover:scale-105 ${isDarkMode ? "hover:bg-gray-800 border border-gray-700" : "hover:bg-gray-100 border border-gray-200"
                                     }`}
                             >
                                 <div className="w-8 h-8 bg-[#28a745] rounded-full flex items-center justify-center">
@@ -150,29 +225,54 @@ export default function Header(
                             </button>
 
                             {/* Dropdown Menu */}
-                            {isDropdownOpen && (
-                                <div
-                                    className={`absolute right-0 mt-2 w-48 backdrop-blur-md rounded-xl shadow-xl border z-50 overflow-hidden transition-all duration-300 animate-fade-in ${isDarkMode ? "bg-gray-800/95 border-gray-700" : "bg-white/95 border-gray-200"
-                                        }`}
-                                >
-                                    <div className="py-2">
+                            { isDropdownOpen && (
+                                    <div
+                                        className={`absolute right-0 mt-2 w-48 backdrop-blur-md rounded-xl shadow-xl border z-50 overflow-hidden transition-all duration-300 animate-fade-in ${isDarkMode
+                                                ? "bg-gray-800/95 border-gray-700"
+                                                : "bg-white/95 border-gray-200"
+                                            } py-2`} // <-- Moved py-2 here
+                                    >
+                                        {/* The intermediate div has been removed */}
                                         <button
-                                            className={`w-full px-4 py-3 text-left text-sm flex items-center space-x-3 transition-colors ${isDarkMode ? "text-gray-300 hover:bg-gray-700/50" : "text-gray-700 hover:bg-gray-100"
+                                            onClick={() => {
+                                                setIsDropdownOpen(false);
+                                                navigateTo("playlists");
+                                            }}
+                                            className={`w-full px-4 py-3 text-left text-sm flex items-center space-x-3 transition-colors ${isDarkMode
+                                                    ? "text-gray-300 hover:bg-gray-700/50"
+                                                    : "text-gray-700 hover:bg-gray-100"
                                                 }`}
                                         >
                                             <List className="w-4 h-4 text-[#28a745]" />
                                             <span>My playlists</span>
                                         </button>
                                         <button
-                                            className={`w-full px-4 py-3 text-left text-sm flex items-center space-x-3 transition-colors ${isDarkMode ? "text-gray-300 hover:bg-gray-700/50" : "text-gray-700 hover:bg-gray-100"
+                                            className={`w-full px-4 py-3 text-left text-sm flex items-center space-x-3 transition-colors ${isDarkMode
+                                                    ? "text-gray-300 hover:bg-gray-700/50"
+                                                    : "text-gray-700 hover:bg-gray-100"
                                                 }`}
                                         >
                                             <Settings className="w-4 h-4 text-[#28a745]" />
                                             <span>Settings</span>
                                         </button>
                                     </div>
-                                </div>
-                            )}
+                                )
+                            }
+                        </div>
+
+                        <div className="group border-2 border-gray-300 rounded-full overflow-hidden relative hover:cursor-pointer hover:border-red-500 transition-all duration-200">
+                            <button
+                                onClick={() => {
+                                    setIsDropdownOpen(false);
+                                    setLogOutModalOpen(true);
+                                }}
+                                className={`group-hover:bg-red-200 focus:bg-red-200 w-full px-4 py-3 text-left text-sm flex items-center space-x-3 transition-colors border-t ${isDarkMode
+                                        ? "text-red-400 border-gray-700 hover:bg-gray-700/50"
+                                        : "text-red-600 border-gray-200 hover:bg-gray-100"
+                                    }`}
+                            >
+                                <LogOut className="w-4 h-4" />
+                            </button>
                         </div>
                     </div>
                 </div>

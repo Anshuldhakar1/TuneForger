@@ -3,12 +3,6 @@ import { query, mutation, action } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { api } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
-import OpenAI from "openai";
-
-const openai = new OpenAI({
-  baseURL: process.env.CONVEX_OPENAI_BASE_URL,
-  apiKey: process.env.CONVEX_OPENAI_API_KEY,
-});
 
 export const getUserPlaylists = query({
   args: {},
@@ -81,13 +75,9 @@ IMPORTANT: Respond ONLY with valid JSON in this exact format, no additional text
 
 Focus on popular, well-known songs that would be available on Spotify. Make the playlist cohesive and thoughtful.`;
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [{ role: "user", content: prompt }],
-      temperature: 0.7,
-    });
+    // Use groqChat instead of OpenAI
+    const content = await groqChat(prompt);
 
-    const content = response.choices[0].message.content;
     if (!content) {
       throw new Error("Failed to generate playlist");
     }
@@ -113,12 +103,7 @@ Focus on popular, well-known songs that would be available on Spotify. Make the 
     let playlistName = args.playlistName;
     if (!playlistName) {
       const namePrompt = `Create a creative, catchy playlist name for this request: "${args.query}". Return only the name, no quotes or extra text.`;
-      const nameResponse = await openai.chat.completions.create({
-        model: "gpt-4.1-nano",
-        messages: [{ role: "user", content: namePrompt }],
-        temperature: 0.8,
-      });
-      playlistName = nameResponse.choices[0].message.content?.trim() || "AI Generated Playlist";
+      playlistName = (await groqChat(namePrompt)).trim() || "AI Generated Playlist";
     }
 
     // Create playlist in database
@@ -187,20 +172,12 @@ export const updatePlaylistSpotifyUrl = mutation({
   args: {
     playlistId: v.id("playlists"),
     spotifyUrl: v.string(),
+    imageUrl: v.optional(v.string()), // <-- Add this
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) {
-      throw new Error("Not authenticated");
-    }
-
-    const playlist = await ctx.db.get(args.playlistId);
-    if (!playlist || playlist.userId !== userId) {
-      throw new Error("Playlist not found");
-    }
-
     await ctx.db.patch(args.playlistId, {
       spotifyUrl: args.spotifyUrl,
+      ...(args.imageUrl ? { imageUrl: args.imageUrl } : {}),
     });
   },
 });
@@ -221,30 +198,28 @@ export const updateTrackSpotifyData = mutation({
       throw new Error("Not authenticated");
     }
 
-    const playlist = await ctx.db.get(args.playlistId);
-    if (!playlist || playlist.userId !== userId) {
-      throw new Error("Playlist not found");
-    }
-
     // Find the track to update
     const tracks = await ctx.db
       .query("tracks")
       .withIndex("by_playlist", (q) => q.eq("playlistId", args.playlistId))
       .collect();
 
-    const track = tracks.find(t => 
-      t.name.toLowerCase() === args.trackName.toLowerCase() && 
-      t.artist.toLowerCase() === args.trackArtist.toLowerCase()
+    const trackToUpdate = tracks.find(
+      (track) => track.name === args.trackName && track.artist === args.trackArtist
     );
 
-    if (track) {
-      await ctx.db.patch(track._id, {
-        spotifyId: args.spotifyId,
-        previewUrl: args.previewUrl,
-        imageUrl: args.imageUrl,
-        duration: args.duration,
-      });
+    if (!trackToUpdate) {
+      throw new Error("Track not found");
     }
+
+    // Update the track with only non-null values
+    const updateData: any = {};
+    if (args.spotifyId) updateData.spotifyId = args.spotifyId;
+    if (args.previewUrl) updateData.previewUrl = args.previewUrl;
+    if (args.imageUrl) updateData.imageUrl = args.imageUrl;
+    if (args.duration !== undefined) updateData.duration = args.duration;
+
+    await ctx.db.patch(trackToUpdate._id, updateData);
   },
 });
 
@@ -304,3 +279,20 @@ export const deletePlaylist = mutation({
     await ctx.db.delete(args.playlistId);
   },
 });
+
+async function groqChat(prompt: string): Promise<string> {
+  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${process.env.Groq_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "llama3-8b-8192", // or "mixtral-8x7b-32768"
+      messages: [{ role: "user", content: prompt }],
+    }),
+  });
+  if (!response.ok) throw new Error("Groq API error");
+  const data = await response.json();
+  return data.choices[0].message.content as string;
+}

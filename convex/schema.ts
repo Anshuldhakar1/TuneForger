@@ -10,6 +10,7 @@ const applicationTables = {
     query: v.string(),
     createdAt: v.number(),
     spotifyUrl: v.optional(v.string()),
+    imageUrl: v.optional(v.string()), // <-- Add this line
   }).index("by_user", ["userId"]),
   
   tracks: defineTable({

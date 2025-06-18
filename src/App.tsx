@@ -1,20 +1,26 @@
-// src/app/page.tsx
 "use client";
-
-import { useState } from "react";
-import Header from "@/components/App/Header";
+import { useConvexAuth } from "convex/react";
+import { useAuthActions } from "@convex-dev/auth/react";
+import { useState, useEffect, useCallback } from "react";
 import Background from "@/components/App/Background";
-import Hero from "@/components/App/Hero";
-import GeneratorForm from "@/components/App/GeneratorForm";
-import Presets from "@/components/App/Presets";
-import SocialBtn from "@/components/App/SocialBtn";
+import HomePage from "./HomePage";
+import Header from "@/components/App/Header";
+import Playlists from "./Playlists";
 import DisconnectModal from "@/components/App/DisconnectModal";
-import LoadingOverlay from "@/components/App/LoadingOverlay";
+import Playlist from "./Playlist";
+import Login from "./Login";
+import LogOutModal from "./components/App/LogOutModal";
+import { useSpotifyConnection } from "@/util/SpotifyConnectionHandler";
 
-export default function HomePage() {
+export default function App() {
+  const { isAuthenticated, isLoading } = useConvexAuth();
+
+  const [currentPage, setCurrentPage] = useState<"home" | "playlists" | "gen_playlist">("home");
+  const [currentViewPlaylistId, setCurrentViewPlaylistId] = useState<string>("");
+
   // State for UI modes and connectivity
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [isSpotifyConnected, setIsSpotifyConnected] = useState(true);
+  const [isSpotifyConnected, setIsSpotifyConnected] = useState(false);
   const [showDisconnectConfirm, setShowDisconnectConfirm] = useState(false);
 
   // State for child component interactions
@@ -22,28 +28,68 @@ export default function HomePage() {
   const [isSpotifyHovered, setIsSpotifyHovered] = useState(false);
   const [isSocialButtonHovered, setIsSocialButtonHovered] = useState(false);
 
-  // State for the generation process (lifted state)
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [prompt, setPrompt] = useState("");
-  const [playlistName, setPlaylistName] = useState("");
+  const { signOut } = useAuthActions();
+  const [logOutModalOpen, setLogOutModalOpen] = useState(false);
+  const { connectSpotify, handleDisconnect, isConnecting, spotifyTokens } = useSpotifyConnection();
 
-  // --- Handlers ---
+  // Update Spotify connection status based on tokens
+  useEffect(() => {
+    setIsSpotifyConnected(!!spotifyTokens);
+  }, [spotifyTokens]);
 
-  const handleGeneratePlaylist = () => {
-    if (!prompt.trim()) return;
-    console.log("Generating playlist with:", { prompt, playlistName });
-    setIsGenerating(true);
-    // Use void to explicitly ignore the Promise
-    void (async () => {
-      await new Promise((resolve) => setTimeout(resolve, 3000));
-      setIsGenerating(false);
-    })();
-  };
+  // Navigation helper
+  const navigateTo = useCallback((page: "home" | "playlists" | "gen_playlist", playlistId = "") => {
+    setCurrentPage(page);
+    setCurrentViewPlaylistId(playlistId);
 
-  const confirmDisconnect = () => {
-    setIsSpotifyConnected(false);
+    let url = "/";
+    if (page === "playlists") url = "/playlists";
+    if (page === "gen_playlist" && playlistId) url = `/playlist/${playlistId}`;
+
+    window.history.pushState(
+      { page, playlistId },
+      "",
+      url
+    );
+  }, []);
+
+  // Listen for browser navigation
+  useEffect(() => {
+    const onPopState = (event: PopStateEvent) => {
+      const state = event.state;
+      if (state && state.page) {
+        setCurrentPage(state.page);
+        setCurrentViewPlaylistId(state.playlistId || "");
+      } else {
+        setCurrentPage("home");
+        setCurrentViewPlaylistId("");
+      }
+    };
+
+    window.addEventListener("popstate", onPopState);
+
+    if (!window.history.state) {
+      window.history.replaceState(
+        { page: currentPage, playlistId: currentViewPlaylistId },
+        "",
+        window.location.pathname
+      );
+    }
+
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
+
+  const confirmDisconnect = async () => {
+    const success = await handleDisconnect();
+    if (success) {
+      setIsSpotifyConnected(false);
+    }
     setShowDisconnectConfirm(false);
   };
+
+  const handleDisconnectSpotify = () => {
+    setShowDisconnectConfirm(true);
+  }
 
   const toggleDarkMode = () => {
     setIsDarkMode(!isDarkMode);
@@ -65,6 +111,19 @@ export default function HomePage() {
     }
   };
 
+  // AUTH GATE
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900">
+        <div className="w-8 h-8 border-4 border-green-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Login isDarkMode={isDarkMode} />;
+  }
+
   return (
     <div
       className={`min-h-screen transition-all duration-500 ${isDarkMode ? "bg-gray-900 text-white" : "bg-white text-gray-900"
@@ -76,40 +135,47 @@ export default function HomePage() {
         isDarkMode={isDarkMode}
         toggleDarkMode={toggleDarkMode}
         isSpotifyConnected={isSpotifyConnected}
+        isSpotifyConnecting={isConnecting} // Add this
         setIsSpotifyConnected={setIsSpotifyConnected}
         isSpotifyHovered={isSpotifyHovered}
-        setIsSpotifyHovered={setIsSpotifyHovered}
-        handleDisconnectSpotify={() => setShowDisconnectConfirm(true)}
+        setIsSpotifyHovered={(hovered: boolean) => { setIsSpotifyHovered(hovered); return true; }}
+        handleDisconnectSpotify={handleDisconnectSpotify}
         isDropdownOpen={isDropdownOpen}
         setIsDropdownOpen={setIsDropdownOpen}
+        setLogOutModalOpen={setLogOutModalOpen}
+        navigateTo={navigateTo}
+        connectSpotify={connectSpotify}
       />
 
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
-        <Hero isDarkMode={isDarkMode} />
-
-        <GeneratorForm
+      {currentPage === "home" && (
+        <HomePage
           isDarkMode={isDarkMode}
-          isGenerating={isGenerating}
-          prompt={prompt}
-          setPrompt={setPrompt}
-          playlistName={playlistName}
-          setPlaylistName={setPlaylistName}
-          onSubmit={handleGeneratePlaylist}
+          navigateTo={navigateTo}
+          isSocialButtonHovered={isSocialButtonHovered}
+          setIsSocialButtonHovered={setIsSocialButtonHovered}
+          handleShare={handleShare}
+          showDisconnectConfirm={showDisconnectConfirm}
+          setShowDisconnectConfirm={setShowDisconnectConfirm}
+          confirmDisconnect={confirmDisconnect}
         />
+      )}
 
-        <Presets
+      {currentPage === "playlists" && (
+        <Playlists
           isDarkMode={isDarkMode}
-          isGenerating={isGenerating}
-          setPrompt={setPrompt}
+          navigateTo={navigateTo}
+          setCurrentViewPlaylistId={setCurrentViewPlaylistId}
         />
-      </main>
+      )}
 
-      <SocialBtn
-        isDarkMode={isDarkMode}
-        isSocialButtonHovered={isSocialButtonHovered}
-        setIsSocialButtonHovered={setIsSocialButtonHovered}
-        handleShare={handleShare}
-      />
+      {currentPage === "gen_playlist" && currentViewPlaylistId !== "" && (
+        <Playlist
+          isDarkMode={isDarkMode}
+          navigateTo={navigateTo}
+          currentViewPlaylistId={currentViewPlaylistId}
+          spotifyTokens={spotifyTokens}
+        />
+      )}
 
       <DisconnectModal
         show={showDisconnectConfirm}
@@ -118,17 +184,17 @@ export default function HomePage() {
         onConfirm={confirmDisconnect}
       />
 
-      <LoadingOverlay isGenerating={isGenerating} isDarkMode={isDarkMode} />
-
-      {/* Custom CSS for animations can remain here or be moved to a global CSS file */}
-      <style>{`
-        @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes slide-up { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes dark-grid { 0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.02; } 50% { transform: scale(1.05) rotate(2deg); opacity: 0.03; } }
-        @keyframes light-grid { 0%, 100% { transform: translateX(0px) translateY(0px); opacity: 0.02; } 25% { transform: translateX(5px) translateY(-2px); opacity: 0.025; } 50% { transform: translateX(0px) translateY(-4px); opacity: 0.03; } 75% { transform: translateX(-5px) translateY(-2px); opacity: 0.025; } }
-        .animate-fade-in { animation: fade-in 0.6s ease-out forwards; opacity: 0; }
-        .animate-slide-up { animation: slide-up 0.8s ease-out forwards; opacity: 0; }
-      `}</style>
+      <LogOutModal
+        show={logOutModalOpen}
+        isDarkMode={isDarkMode}
+        onClose={() => { setLogOutModalOpen(false); }}
+        onConfirm={() => {
+          setLogOutModalOpen(false);
+          void signOut();
+          setIsSpotifyConnected(false);
+          navigateTo("home");
+        }}
+      />
     </div>
   );
 }

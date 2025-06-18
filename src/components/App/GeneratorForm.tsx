@@ -1,4 +1,3 @@
-// src/components/App/GeneratorForm.tsx
 "use client";
 
 import { Loader2, Play, Headphones, Zap } from "lucide-react";
@@ -6,6 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
+import { useAction } from "convex/react";
+import { toast } from "sonner";
+import { api } from "../../../convex/_generated/api";
 
 interface GeneratorFormProps {
     isDarkMode: boolean;
@@ -13,14 +15,10 @@ interface GeneratorFormProps {
     prompt: string;
     playlistName: string;
     setPrompt: (value: string) => void;
+    setIsGenerating: (value: boolean) => void;
     setPlaylistName: (value: string) => void;
+    navigateTo: (page: "home" | "playlists" | "gen_playlist", playlistId?: string) => void;
 }
-
-const onSubmit = () => {
-    
-
-    
-};
 
 export default function GeneratorForm({
     isDarkMode,
@@ -28,8 +26,39 @@ export default function GeneratorForm({
     prompt,
     playlistName,
     setPrompt,
+    setIsGenerating,
     setPlaylistName,
+    navigateTo,
 }: GeneratorFormProps) {
+
+    const generatePlaylist = useAction(api.playlists.generatePlaylist);
+
+    const onSubmit = async () => {
+
+        setIsGenerating(true);
+        try {
+            await generatePlaylist({
+                query: prompt.trim(),
+                playlistName: playlistName.trim() || undefined,
+                createOnSpotify: false,
+            });
+
+            toast.success("Playlist generated successfully!");
+            setPrompt("");
+            setPlaylistName("");
+
+            setTimeout(() => { 
+                navigateTo("playlists");
+            }, 2000);
+
+        } catch (error) {
+            console.error("Failed to generate playlist:", error);
+            toast.error("Failed to generate playlist. Please try again.");
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
     return (
         <Card
             className={`mb-8 shadow-2xl backdrop-blur-sm transition-all duration-300 animate-slide-up border-2 ${isDarkMode
@@ -87,7 +116,7 @@ export default function GeneratorForm({
                         />
                     </div>
                     <Button
-                        onClick={onSubmit}
+                        onClick={() => { void onSubmit(); }}
                         disabled={!prompt.trim() || isGenerating}
                         className="w-full h-16 text-xl font-bold bg-[#28a745] hover:bg-[#218838] text-white shadow-xl hover:shadow-2xl transform hover:scale-[1.02] transition-all duration-300 border-0 rounded-xl"
                     >
