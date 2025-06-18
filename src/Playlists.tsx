@@ -40,7 +40,7 @@ export default function Playlists({
 }: PlaylistsProps) {
     // Fetch playlists from backend
     const playlists = useQuery(api.playlists.getUserPlaylists) || [];
-    const cleanupAction = useAction(api.spotify.cleanupNonExistentTracks);
+    // const cleanupAction = useAction(api.spotify.cleanupNonExistentTracks);
 
     // UI state
     const [viewMode, setViewMode] = useState<"grid" | "list">("grid");

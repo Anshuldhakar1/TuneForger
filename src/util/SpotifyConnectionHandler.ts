@@ -3,7 +3,6 @@ import { useState } from "react";
 import { api } from "../../convex/_generated/api";
 import { toast } from "sonner";
 
-// Move these inside the component that uses them, or create a custom hook
 export const useSpotifyConnection = () => {
   const getAuthUrl = useAction(api.spotify.getSpotifyAuthUrl);
   const exchangeSpotifyCode = useAction(api.spotify.exchangeSpotifyCode);
@@ -12,7 +11,6 @@ export const useSpotifyConnection = () => {
   const [isConnecting, setIsConnecting] = useState(false);
 
   const connectSpotify = async (): Promise<boolean> => {
-    console.log("=== Starting Spotify connection ===");
     setIsConnecting(true);
     
     return new Promise((resolve) => {

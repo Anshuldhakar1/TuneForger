@@ -11,7 +11,6 @@ export const getSpotifyAuthUrl = action({
   args: {},
   handler: async (ctx) => {
     const userId = await getAuthUserId(ctx);
-    // console.log("getSpotifyAuthUrl called for userId:", userId);
     if (!userId) {
       throw new Error("Not authenticated");
     }
@@ -29,6 +28,7 @@ export const getSpotifyAuthUrl = action({
       scope: scopes,
       redirect_uri: SPOTIFY_REDIRECT_URI,
       state: userId,
+      show_dialog: "true",
     });
 
     return `https://accounts.spotify.com/authorize?${params.toString()}`;
@@ -559,106 +559,33 @@ export const disconnectSpotify = mutation({
   },
 });
 
-// Add this temporary action to clean up existing tracks
 
-export const cleanupNonExistentTracks = action({
-  args: {},
-  handler: async (ctx) => {
+export const deleteTracksFromPlaylist = mutation({
+  args: {
+    playlistId: v.id("playlists"),
+    trackIds: v.array(v.id("tracks")),
+  },
+  handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) {
       throw new Error("Not authenticated");
     }
 
-    // Get Spotify tokens
-    let tokens = await ctx.runQuery(api.spotify.getSpotifyTokens);
-    if (!tokens) {
-      throw new Error("Spotify not connected. Please connect your Spotify account first.");
-    }
-
-    // Check if token needs refresh
-    if (Date.now() >= tokens.expiresAt) {
-      await ctx.runAction(api.spotify.refreshSpotifyToken);
-      tokens = await ctx.runQuery(api.spotify.getSpotifyTokens);
-    }
-
-    // Get all tracks from database by getting all user playlists and their tracks
-    const userPlaylists = await ctx.runQuery(api.playlists.getUserPlaylists);
-    const allTracks: any[] = [];
-    
-    for (const playlist of userPlaylists) {
-      const playlistData = await ctx.runQuery(api.playlists.getPlaylistWithTracks, {
-        playlistId: playlist._id,
-      });
-      if (playlistData?.tracks) {
-        allTracks.push(...playlistData.tracks);
-      }
-    }
-    console.log(`Found ${allTracks.length} tracks to check`);
+    // Get all tracks for the playlist
+    const tracks = await ctx.db
+      .query("tracks")
+      .withIndex("by_playlist", (q) => q.eq("playlistId", args.playlistId))
+      .collect();
 
     let deletedCount = 0;
-    let updatedCount = 0;
-    let checkedCount = 0;
 
-    // Process tracks in batches to avoid timeout
-    const batchSize = 20; // Reduced batch size for better performance
-    for (let i = 0; i < allTracks.length; i += batchSize) {
-      const batch = allTracks.slice(i, i + batchSize);
-      
-      for (const track of batch) {
-        try {
-          checkedCount++;
-          console.log(`Checking track ${checkedCount}/${allTracks.length}: ${track.name} by ${track.artist}`);
-
-          // Search for track on Spotify
-          const spotifyTrack = await ctx.runAction(api.spotify.searchSpotifyTrack, {
-            trackName: track.name,
-            artistName: track.artist,
-          });
-
-          if (!spotifyTrack) {
-            // Track not found on Spotify, mark for deletion
-            console.log(`Track not found on Spotify: ${track.name} by ${track.artist}`);
-            deletedCount++;
-            // Note: We're not actually deleting here, just counting
-          } else {
-            // Track found, update with Spotify data if missing
-            if (!track.spotifyId) {
-              try {
-                await ctx.runMutation(api.playlists.updateTrackSpotifyData, {
-                  playlistId: track.playlistId,
-                  trackName: track.name,
-                  trackArtist: track.artist,
-                  spotifyId: spotifyTrack.id || undefined,
-                  previewUrl: spotifyTrack.preview_url || undefined,
-                  imageUrl: spotifyTrack.album?.images?.[0]?.url || undefined,
-                  duration: spotifyTrack.duration_ms || undefined,
-                });
-                updatedCount++;
-                console.log(`Updated Spotify data for: ${track.name} by ${track.artist}`);
-              } catch (updateError) {
-                console.error(`Failed to update track ${track.name}:`, updateError);
-              }
-            }
-          }
-
-          // Add small delay to avoid rate limiting
-          await new Promise(resolve => setTimeout(resolve, 150));
-
-        } catch (error) {
-          console.error(`Error checking track ${track.name} by ${track.artist}:`, error);
-        }
+    for (const track of tracks) {
+      if (args.trackIds.some(id => id === track._id)) {
+        await ctx.db.delete(track._id);
+        deletedCount++;
       }
-
-      // Longer delay between batches
-      await new Promise(resolve => setTimeout(resolve, 2000));
     }
 
-    console.log(`Cleanup complete. Found ${deletedCount} missing tracks, updated ${updatedCount} tracks out of ${allTracks.length} checked.`);
-    return {
-      totalChecked: allTracks.length,
-      notFoundCount: deletedCount,
-      updatedCount: updatedCount,
-      remainingCount: allTracks.length - deletedCount,
-    };
+    return { deletedCount };
   },
 });
